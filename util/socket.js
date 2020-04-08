@@ -1,52 +1,53 @@
 const youtubedl = require("youtube-dl")
-let broadcaster
+const _ = require("lodash")
 
 let peers = []
 
 module.exports = function (server) {
   const io = require("socket.io")(server)
   io.sockets.on("error", (e) => console.log(e))
-  io.sockets.on("connection", (socket) => {
-    peers.push(socket.id)
-    socket.emit("client-list", peers)
+  console.log("fart")
+  io.on("connection", (socket) => {
+    console.log("Connection with ID: %s", socket.id)
+    const peersToAdvertise = _.chain(io.sockets.connected)
+      .values()
+      .without(socket)
+      .value()
 
-    socket.on("broadcaster", () => {
-      broadcaster = socket.id
-      console.log(socket.id, "broadcaster")
+    console.log("advertising peers", _.map(peersToAdvertise, "id"))
+    peersToAdvertise.forEach(function (socket2) {
+      console.log("Advertising peer %s to %s", socket.id, socket2.id)
+      socket2.emit("peer", {
+        peerId: socket.id,
+        initiator: true,
+      })
 
-      socket.broadcast.emit("broadcaster")
+      socket.emit("peer", {
+        peerId: socket2.id,
+        initiator: false,
+      })
     })
 
-    socket.on("watcher", () => {
-      socket.to(broadcaster).emit("watcher", socket.id)
+    socket.on("signal", function (data) {
+      var socket2 = io.sockets.connected[data.peerId]
+      if (!socket2) {
+        return
+      }
+      console.log("Proxying signal from peer %s to %s", socket.id, socket2.id)
+
+      socket2.emit("signal", {
+        signal: data.signal,
+        peerId: socket.id,
+      })
     })
-    socket.on("disconnect", (args) => {
-      peers = peers.filter((id) => id !== socket.id)
-      console.log(socket.id, "disconnected")
+
+    socket.on("set-name", (name) => {
+      const peerIndex = peers.findIndex((p) => p.id === socket.id)
+      peers[peerIndex] = { id: socket.id, name: name }
+      console.log(peers)
+      console.log(name, "set name")
       socket.emit("client-list", peers)
-      socket.to(broadcaster).emit("disconnectPeer", socket.id)
-    })
-    socket.on("offer", (id, message) => {
-      socket.to(id).emit("offer", socket.id, message)
-    })
-    socket.on("answer", (id, message) => {
-      socket.to(id).emit("answer", socket.id, message)
-    })
-    socket.on("candidate", (id, message) => {
-      socket.to(id).emit("candidate", socket.id, message)
-    })
-
-    socket.on("video-plz", (id) => {
-      console.log(id, "video request from")
-      youtubedl.getInfo(
-        "https://www.youtube.com/watch?v=XdBR-SrP6uU",
-        function (err, { url }) {
-          if (err) throw err
-          console.log("video data retrieved")
-
-          socket.emit("video-data", url)
-        }
-      )
+      socket.broadcast.emit("client-list", peers)
     })
   })
 }

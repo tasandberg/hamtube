@@ -7,17 +7,20 @@
     "@testing-library/react": "^9.3.2",
     "@testing-library/user-event": "^7.1.2",
     "bulma": "^0.8.1",
+    "debug": "^4.1.1",
     "express": "^4.17.1",
+    "lodash": "^4.17.15",
     "node-sass": "^4.13.1",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-router-dom": "^5.1.2",
     "react-scripts": "3.4.1",
+    "simple-peer": "^9.6.2",
     "socket.io": "^2.3.0",
     "youtube-dl": "^3.0.2"
   },
   "scripts": {
-    "start": "node server & react-scripts start",
+    "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
