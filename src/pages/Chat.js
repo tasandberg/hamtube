@@ -1,6 +1,8 @@
 import React from "react"
 import io from "socket.io-client"
-import Peer from "simple-peer"
+import initializePeer from "../util/peer"
+import _ from "lodash"
+
 const vidOptions = {
   video: {
     facingMode: "user",
@@ -14,9 +16,11 @@ export default class Chat extends React.Component {
   constructor(props) {
     super(props)
 
+    this.peerVids = {}
     this.state = {
       name: undefined,
       peers: {},
+      sharing: false,
     }
   }
 
@@ -25,58 +29,36 @@ export default class Chat extends React.Component {
     const socket = io("http://localhost:4000")
     this.socket = socket
 
+    this.startLocalVideo()
+
     socket.on("connect", () => {
       console.log("Connected to signalling server, Peer ID: %s", socket.id)
 
       /* On connect, we will send and receive data from all connected peers */
       socket.on("peer", (data) => {
         const peerId = data.peerId
-        const peer = new Peer({
-          initiator: data.initiator,
-          trickle: true,
-          objectMode: true,
-        })
+        const peer = initializePeer(this, socket, data)
 
-        console.log(
-          "Peer available for connection discovered from signalling server, Peer ID: %s",
-          peerId
-        )
+        this.setState((prevState) => ({
+          peers: { ...prevState.peers, [peerId]: { peer: peer, name: "" } },
+        }))
+      })
 
-        /* Handle receiving signal from new peer */
-        socket.on("signal", (data) => {
-          if (data.peerId === peerId) {
-            console.log("Received signalling data from PeerId:", peerId)
-            peer.signal(data.signal)
-          }
-        })
-
-        /* Allow peer to handle receiving signal from this peer */
-        /**
-         * 1. This peer sends signal (automatic)
-         * 2. Our instance of peerX here receives signal event
-         * 3. Pass data through socket.io so that it is received by the other client
-         */
-        peer.on("signal", function (data) {
-          console.log("Signal", data, "to Peer ID:", peerId)
-          socket.emit("signal", {
-            signal: data,
-            peerId: peerId,
+      socket.on("destroy", (peerId) => {
+        console.log("destroying peer", peerId)
+        if (this.state.peers[peerId]) {
+          this.setState((prevState) => {
+            this.state.peers[peerId].peer.destroy()
+            const newPeers = _.omit(prevState.peers, peerId)
+            return { peers: newPeers }
           })
-        })
-        peer.on("connect", function () {
-          console.log("Peer connection established")
-          peer.send("We made it")
-        })
-
-        peer.on("stream", function (stream) {
-          socket.emit("stream", peerId, stream)
-        })
-
-        peer.on("data", (data) => {
-          console.log(data)
-        })
+        }
       })
     })
+  }
+
+  componentWillUnmount() {
+    console.log("unmounting")
   }
 
   startLocalVideo() {
@@ -84,23 +66,25 @@ export default class Chat extends React.Component {
       .getUserMedia(vidOptions)
       .then((stream) => {
         this.localVideo.srcObject = stream
+        this.stream = stream
+        this.setState({
+          sharing: true,
+        })
       })
       .catch((e) => console.log(e))
-  }
-
-  addPeer(id, peer) {
-    this.setState(({ peers }) => ({
-      peers: {
-        ...peers,
-        [id]: peer,
-      },
-    }))
   }
 
   setName = () => {
     this.socket.emit("set-name", this.nameBox.value)
     this.setState({
       name: this.nameBox.value,
+    })
+  }
+
+  shareStream = () => {
+    Object.keys(this.state.peers).forEach((id) => {
+      const { peer } = this.state.peers[id]
+      peer.addStream(this.stream)
     })
   }
 
@@ -123,7 +107,7 @@ export default class Chat extends React.Component {
         )}
       </div>
       <div className="columns">
-        <div className="column is-four-fifths">
+        <div className="column is-three-fifths">
           <section className="section has-background-primary">
             <h2 className="title">Main Video</h2>
             <video
@@ -147,14 +131,25 @@ export default class Chat extends React.Component {
           </section>
         </div>
       </div>
+      <button onClick={this.shareStream}>Share Video</button>
       <section className="section">
         <h1>Peer video</h1>
-        <video
-          autoPlay
-          muted
-          playsInline
-          ref={(video) => (this.remoteVideo = video)}
-        />
+        {Object.keys(this.state.peers).map((id) => (
+          <video
+            autoPlay
+            muted
+            playsInline
+            key={`${id}-video`}
+            id={`${id}-video`}
+            style={{
+              width: "250px",
+              height: "200px",
+              border: "1px solid gray",
+              margin: "1rem",
+            }}
+            ref={(video) => (this.peerVids[id] = video)}
+          />
+        ))}
       </section>
     </section>
   )

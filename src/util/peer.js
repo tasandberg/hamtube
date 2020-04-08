@@ -1,7 +1,9 @@
 import Peer from "simple-peer"
 
-export default function (_chatComponent, socket, data) {
+export default function (chatComponent, socket, data) {
   const peerId = data.peerId
+  const socketId = socket.id
+
   const peer = new Peer({
     initiator: data.initiator,
     trickle: true,
@@ -16,7 +18,6 @@ export default function (_chatComponent, socket, data) {
   /* Handle receiving signal from new peer */
   socket.on("signal", (data) => {
     if (data.peerId === peerId) {
-      console.log("Received signalling data from PeerId:", peerId)
       peer.signal(data.signal)
     }
   })
@@ -28,23 +29,36 @@ export default function (_chatComponent, socket, data) {
    * 3. Pass data through socket.io so that it is received by the other client
    */
   peer.on("signal", function (data) {
-    console.log("Signal", data, "to Peer ID:", peerId)
     socket.emit("signal", {
       signal: data,
       peerId: peerId,
     })
   })
   peer.on("connect", function () {
-    console.log("Peer connection established")
-    peer.send("We made it")
-  })
+    if (chatComponent.state.sharing) {
+      console.log(chatComponent.state.sharing, "sharing " + socketId)
 
+      peer.addStream(chatComponent.stream)
+    }
+    peer.send("Hello from " + socket.id)
+  })
   peer.on("stream", function (stream) {
-    socket.emit("stream", peerId, stream)
+    console.log("Im getting a stream so hard rn")
+    console.log("My id", socketId)
+    console.log("Peer id", peerId)
+    const vid = document.getElementById(`${peerId}-video`)
+    console.log(vid)
+
+    // const vid = document.getElementById(`${socket.id}-video`)
+    vid.srcObject = stream
   })
 
   peer.on("data", (data) => {
     console.log(data)
+  })
+
+  peer.on("destroy", () => {
+    socket.emit("destroy", peerId)
   })
 
   return peer
