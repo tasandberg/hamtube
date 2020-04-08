@@ -20,7 +20,9 @@
     "youtube-dl": "^3.0.2"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "dev": "react-scripts start",
+    "start": "node server.js",
+    "heroku-postbuild": "yarn install && yarn build",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"

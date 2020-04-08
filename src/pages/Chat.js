@@ -88,6 +88,16 @@ export default class Chat extends React.Component {
     })
   }
 
+  stopStream = () => {
+    this.setState({
+      sharing: false,
+    })
+
+    _.forEach(this.state.peers, ({ id, peer }) => {
+      peer.removeStream(this.stream)
+    })
+  }
+
   render = () => (
     <section className="section">
       <div className="container">
@@ -131,7 +141,16 @@ export default class Chat extends React.Component {
           </section>
         </div>
       </div>
-      <button onClick={this.shareStream}>Share Video</button>
+      <button
+        onClick={() =>
+          this.state.sharing ? this.stopStream() : this.shareStream()
+        }
+      >
+        {this.state.sharing ? "Stop Sharing" : "Share Video"}
+      </button>{" "}
+      {this.state.sharing ? (
+        <span className="has-text-success">sharing</span>
+      ) : null}
       <section className="section">
         <h1>Peer video</h1>
         {Object.keys(this.state.peers).map((id) => (

@@ -34,6 +34,7 @@ export default function (chatComponent, socket, data) {
       peerId: peerId,
     })
   })
+
   peer.on("connect", function () {
     if (chatComponent.state.sharing) {
       console.log(chatComponent.state.sharing, "sharing " + socketId)
@@ -42,12 +43,12 @@ export default function (chatComponent, socket, data) {
     }
     peer.send("Hello from " + socket.id)
   })
+
   peer.on("stream", function (stream) {
     console.log("Im getting a stream so hard rn")
     console.log("My id", socketId)
     console.log("Peer id", peerId)
     const vid = document.getElementById(`${peerId}-video`)
-    console.log(vid)
 
     // const vid = document.getElementById(`${socket.id}-video`)
     vid.srcObject = stream
