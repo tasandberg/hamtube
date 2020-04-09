@@ -67,9 +67,6 @@ export default class Chat extends React.Component {
       .then((stream) => {
         this.localVideo.srcObject = stream
         this.stream = stream
-        this.setState({
-          sharing: true,
-        })
       })
       .catch((e) => console.log(e))
   }
@@ -82,6 +79,10 @@ export default class Chat extends React.Component {
   }
 
   shareStream = () => {
+    this.setState({
+      sharing: true,
+    })
+
     Object.keys(this.state.peers).forEach((id) => {
       const { peer } = this.state.peers[id]
       peer.addStream(this.stream)
@@ -93,17 +94,21 @@ export default class Chat extends React.Component {
       sharing: false,
     })
 
-    const mediaTracks = this.stream.getTracks()
-
+    this.socket.emit("disconnect-video")
     _.forEach(this.state.peers, ({ id, peer }) => {
-      console.log("")
-
-      mediaTracks.forEach((t) => {
-        t.stop()
-        peer.removeTrack(t, this.stream)
-      })
       peer.removeStream(this.stream)
     })
+
+    this.recyclePeers()
+  }
+
+  recyclePeers() {
+    // _.forEach(this.state.peers, ({ id, peer }) => {
+    //   peer.destroy()
+    // })
+    this.oldPeers = this.state.peers
+    this.setState({ peers: {} })
+    this.socket.emit("recycle-peers")
   }
 
   render = () => (

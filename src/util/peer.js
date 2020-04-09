@@ -17,8 +17,10 @@ export default function (chatComponent, socket, data) {
 
   /* Handle receiving signal from new peer */
   socket.on("signal", (data) => {
-    if (data.peerId === peerId) {
-      peer.signal(data.signal)
+    if (data.peerId === peerId && chatComponent.state.peers[peerId]) {
+      if (!peer.destroyed) {
+        peer.signal(data.signal)
+      }
     }
   })
 
@@ -42,6 +44,13 @@ export default function (chatComponent, socket, data) {
       peer.addStream(chatComponent.stream)
     }
     peer.send("Hello from " + socket.id)
+  })
+
+  socket.on("disconnect-video", (socketId) => {
+    const vid = document.getElementById(`${peerId}-video`)
+    if (vid) {
+      vid.srcObject = null
+    }
   })
 
   peer.on("stream", function (stream) {
