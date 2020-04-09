@@ -26,7 +26,7 @@ export default class Chat extends React.Component {
 
   componentDidMount() {
     console.log("Initializing client")
-    const socket = io("http://localhost:4000")
+    const socket = io("/")
     this.socket = socket
 
     this.startLocalVideo()
@@ -93,7 +93,15 @@ export default class Chat extends React.Component {
       sharing: false,
     })
 
+    const mediaTracks = this.stream.getTracks()
+
     _.forEach(this.state.peers, ({ id, peer }) => {
+      console.log("")
+
+      mediaTracks.forEach((t) => {
+        t.stop()
+        peer.removeTrack(t, this.stream)
+      })
       peer.removeStream(this.stream)
     })
   }
