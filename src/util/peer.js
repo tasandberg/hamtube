@@ -67,6 +67,8 @@ export default function (chatComponent, socket, data) {
   })
 
   peer.on("destroy", () => {
+    console.log("destroy")
+
     socket.emit("destroy", peerId)
   })
 

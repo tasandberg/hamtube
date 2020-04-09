@@ -29,7 +29,7 @@ module.exports = function (server) {
     socket.on("disconnect", function (peerId) {
       console.log("Disconnecting ", socket.id)
       console.log(Object.keys(io.sockets.connected).length, "clients connected")
-      socket.broadcast.emit("destroy", socket.id)
+      io.emit("destroy", socket.id)
     })
 
     socket.on("disconnect-video", function () {

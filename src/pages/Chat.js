@@ -40,21 +40,38 @@ export default class Chat extends React.Component {
         const peer = initializePeer(this, socket, data)
 
         this.setState((prevState) => ({
-          peers: { ...prevState.peers, [peerId]: { peer: peer, name: "" } },
+          peers: {
+            ...prevState.peers,
+            [peerId]: {
+              id: peerId,
+              peer: peer,
+              name: "",
+              muted: false,
+              volume: 1,
+            },
+          },
         }))
+      })
+
+      socket.on("destroy", (id) => {
+        this.setState((prevState) => {
+          const peers = prevState.peers
+          delete peers[id]
+          return {
+            peers: peers,
+          }
+        })
       })
     })
   }
 
-  componentWillUnmount() {
-    console.log("unmounting")
-    this.socket.disconnect()
-  }
-
   startLocalVideo() {
+    console.log("Requesting local video")
     navigator.mediaDevices
       .getUserMedia(vidOptions)
       .then((stream) => {
+        console.log("Local Video Obtained")
+
         this.localVideo.srcObject = stream
         this.stream = stream
       })
@@ -103,6 +120,11 @@ export default class Chat extends React.Component {
     this.peerStream = null
   }
 
+  toggleMute = (id) => {
+    const el = this.peerVids[id]
+    el.muted = !el.muted
+  }
+
   render = () => (
     <section className="section">
       <div className="container">
@@ -136,13 +158,27 @@ export default class Chat extends React.Component {
         <div className="column">
           <section className="section has-background-light">
             <h2>Chat buddies</h2>
-            <ul style={{ listStyle: "none" }}>
-              {Object.keys(this.state.peers).map((p) => (
-                <li key={`peer-${p}`} style={{ listStyle: "none" }}>
-                  {p}
-                </li>
-              ))}
-            </ul>
+            {Object.values(this.state.peers).map(({ id, muted }) => (
+              <div key={`${id}-video`}>
+                <button onClick={() => this.toggleMute(id)}>
+                  {muted ? "unmute" : "mute"}
+                </button>
+                <video
+                  autoPlay
+                  className="has-background-black has-text-white"
+                  muted={muted}
+                  playsInline
+                  id={`${id}-video`}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                  }}
+                  ref={(video) => (this.peerVids[id] = video)}
+                >
+                  asdfasdf
+                </video>
+              </div>
+            ))}
           </section>
         </div>
       </div>
@@ -158,22 +194,6 @@ export default class Chat extends React.Component {
       ) : null}
       <section className="section">
         <h1>Peer video</h1>
-        {Object.keys(this.state.peers).map((id) => (
-          <video
-            autoPlay
-            muted
-            playsInline
-            key={`${id}-video`}
-            id={`${id}-video`}
-            style={{
-              width: "250px",
-              height: "200px",
-              border: "1px solid gray",
-              margin: "1rem",
-            }}
-            ref={(video) => (this.peerVids[id] = video)}
-          />
-        ))}
       </section>
     </section>
   )
