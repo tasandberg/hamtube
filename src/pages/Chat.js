@@ -43,22 +43,12 @@ export default class Chat extends React.Component {
           peers: { ...prevState.peers, [peerId]: { peer: peer, name: "" } },
         }))
       })
-
-      socket.on("destroy", (peerId) => {
-        console.log("destroying peer", peerId)
-        if (this.state.peers[peerId]) {
-          this.setState((prevState) => {
-            this.state.peers[peerId].peer.destroy()
-            const newPeers = _.omit(prevState.peers, peerId)
-            return { peers: newPeers }
-          })
-        }
-      })
     })
   }
 
   componentWillUnmount() {
     console.log("unmounting")
+    this.socket.disconnect()
   }
 
   startLocalVideo() {
@@ -83,9 +73,11 @@ export default class Chat extends React.Component {
       sharing: true,
     })
 
+    this.peerStream = this.stream.clone()
+
     Object.keys(this.state.peers).forEach((id) => {
       const { peer } = this.state.peers[id]
-      peer.addStream(this.stream)
+      peer.addStream(this.peerStream)
     })
   }
 
@@ -94,21 +86,21 @@ export default class Chat extends React.Component {
       sharing: false,
     })
 
-    this.socket.emit("disconnect-video")
-    _.forEach(this.state.peers, ({ id, peer }) => {
-      peer.removeStream(this.stream)
+    // Disable the tracks of the stream
+    this.peerStream.getTracks().forEach((t) => {
+      t.enabled = false
     })
 
-    this.recyclePeers()
-  }
+    // Tell peers to update their remote video streams
+    this.socket.emit("disconnect-video")
 
-  recyclePeers() {
-    // _.forEach(this.state.peers, ({ id, peer }) => {
-    //   peer.destroy()
-    // })
-    this.oldPeers = this.state.peers
-    this.setState({ peers: {} })
-    this.socket.emit("recycle-peers")
+    // Remove streams from peers
+    _.forEach(this.state.peers, ({ id, peer }) => {
+      peer.removeStream(this.peerStream)
+    })
+
+    // Send current peerStream to the collectors
+    this.peerStream = null
   }
 
   render = () => (

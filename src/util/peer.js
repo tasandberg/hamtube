@@ -47,7 +47,7 @@ export default function (chatComponent, socket, data) {
   })
 
   socket.on("disconnect-video", (socketId) => {
-    const vid = document.getElementById(`${peerId}-video`)
+    const vid = document.getElementById(`${socketId}-video`)
     if (vid) {
       vid.srcObject = null
     }
@@ -59,7 +59,6 @@ export default function (chatComponent, socket, data) {
     console.log("Peer id", peerId)
     const vid = document.getElementById(`${peerId}-video`)
 
-    // const vid = document.getElementById(`${socket.id}-video`)
     vid.srcObject = stream
   })
 
