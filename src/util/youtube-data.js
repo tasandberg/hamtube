@@ -1,24 +1,24 @@
-import "whatwg-fetch"
-const { fetch } = window
+import axios from "axios";
+
+const urlRegex = /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=+$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=+$,\w]+@)[A-Za-z0-9.-]+)((?:\/[+~%/.\w-_]*)?\??(?:[-+=&;%@.\w_]*)#?(?:[\w]*))?)/;
 
 export const extractVideoId = (url) => {
-  var regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/
-  var match = url.match(regExp)
+  var regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+  var match = url.match(regExp);
   if (match && match[7].length === 11) {
-    return match[7]
+    return match[7];
   } else {
-    alert("Could not extract video ID.")
+    alert("Could not extract video ID.");
   }
-}
-export const extractVideoData = (videoId) => {
-  const opts = {
+};
+export const extractVideoData = (videoUrl) => {
+  return axios(`https://noembed.com/embed?url=${videoUrl}&format=json`, {
     headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
+      "Content-Type": "text/plain",
     },
-  }
-  return fetch(
-    `https://www.youtube.com/oembed?url=http://www.youtube.com/watch?v=${videoId}&format=json`
-  ).catch((e) => console.log(e))
-}
+  }).catch((e) => console.log("wow"));
+};
+
+export const validUrl = (url) => {
+  return urlRegex.test(url);
+};
