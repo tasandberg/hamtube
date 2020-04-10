@@ -1,7 +1,7 @@
 import React from "react"
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom"
 import Chat from "./pages/Chat"
-
+import KtvDashboard from "./pages/KtvDashboard"
 export default function App() {
   return (
     <Router>
@@ -15,8 +15,11 @@ export default function App() {
         </div>
       </nav>
       <Switch>
-        <Route exact path="/">
+        <Route exact path="/chat">
           <Chat />
+        </Route>
+        <Route exact path="/">
+          <KtvDashboard />
         </Route>
       </Switch>
     </Router>
