@@ -1,12 +1,11 @@
-const router = require("express").Router();
+const express = require("express")
+const router = express.Router()
+const chatRouter = express.Router({ mergeParams: true })
 
-router.get("/", (req, res) => {
-  res.send("api /");
-});
+chatRouter.get("/new", (req, res) => {
+  console.log(req, "REQUEST")
+  res.send("fook yeah")
+})
+router.use("/chat", chatRouter)
 
-router.post("/chat", (req, res) => {
-  // create new chat and return
-  res.send("abcd1234");
-});
-
-module.exports = router;
+module.exports = router
