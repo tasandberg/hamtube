@@ -1,0 +1,31 @@
+.video-player {
+  width: 100%;
+  height: 50vh;
+  position: relative;
+
+  iframe {
+    z-index: 1;
+  }
+}
+
+.video-container {
+  width: 100%;
+  height: 50vh;
+  position: relative;
+}
+
+.video-overlay {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &.fade {
+    opacity: 0;
+    transition: 2s;
+  }
+}
