@@ -1,10 +1,8 @@
-import axios from "axios";
-const API_BASE = process.env.API_BASE;
+import axios from "axios"
 
-export const apiClient = axios.create({
-  baseURL: API_BASE,
-});
+const apiClient = axios.create({
+  baseURL: process.env.REACT_APP_API_BASE_URL,
+  responseType: "json",
+})
 
-export const newChat = () => {
-  return apiClient.get("/chat/new");
-};
+export default apiClient

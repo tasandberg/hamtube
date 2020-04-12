@@ -39,7 +39,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
-  "proxy": "http://lvh.me:4000",
+  "proxy": "https://lvh.me:4000",
   "eslintConfig": {
     "extends": "react-app"
   },
