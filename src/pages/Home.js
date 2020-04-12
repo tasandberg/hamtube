@@ -1,21 +1,39 @@
-import React from "react"
-import classNames from "classnames"
+import React from "react";
+import classNames from "classnames";
+import { newChat } from "../util/api";
+import axios from "axios";
+
+const apiClient = axios.create({
+  baseURL: "http://api.lvh.me:4000",
+});
+
 export default class Home extends React.Component {
   constructor(props) {
-    super(props)
+    super(props);
 
     this.state = {
       validCode: false,
       roomCodeInput: "",
-    }
+    };
   }
 
   hasValidCode = (e) => {
     this.setState({
       validCode: e.currentTarget.value.length === 8,
       roomCodeInput: e.currentTarget.value,
-    })
-  }
+    });
+  };
+
+  createRoom = () => {
+    apiClient
+      .get("/chat/new")
+      .then((res) => {
+        console.log(res);
+      })
+      .catch((e) => {
+        console.log("an error occurred");
+      });
+  };
 
   render = () => (
     <section className="hero is-info is-fullheight">
@@ -31,9 +49,12 @@ export default class Home extends React.Component {
               <div className="card has-text-black">
                 <div className="card-content has-text-black">
                   <p className="title has-text-black">Create a room</p>
-                  <a href="/chat/new" className="button is-success">
+                  <button
+                    type="button"
+                    onClick={this.createRoom}
+                    className="button is-success">
                     Create a room
-                  </a>
+                  </button>
                 </div>
               </div>
             </div>
@@ -51,8 +72,7 @@ export default class Home extends React.Component {
                             placeholder="Enter a room code"
                             onChange={this.hasValidCode}
                             value={this.state.roomCodeInput}
-                            ref={(el) => (this.roomCodeInput = el)}
-                          ></input>
+                            ref={(el) => (this.roomCodeInput = el)}></input>
                           <span className="icon is-right">
                             <i
                               className={classNames("fas fa-check", {
@@ -68,8 +88,7 @@ export default class Home extends React.Component {
                             <a
                               disabled={!this.state.validCode}
                               className="button is-success"
-                              href={`/${this.state.roomCodeInput}`}
-                            >
+                              href={`/${this.state.roomCodeInput}`}>
                               Go!
                             </a>
                           </div>
@@ -84,5 +103,5 @@ export default class Home extends React.Component {
         </div>
       </div>
     </section>
-  )
+  );
 }
