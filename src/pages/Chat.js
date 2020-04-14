@@ -1,16 +1,7 @@
 import React from "react"
-import io from "socket.io-client"
-import initializePeer from "../util/peer"
 import _ from "lodash"
-
-const vidOptions = {
-  video: {
-    facingMode: "user",
-    width: { min: 160, ideal: 640, max: 1280 },
-    height: { min: 120, ideal: 360, max: 720 },
-  },
-  audio: true,
-}
+import getWebcam from "../util/getWebcam"
+import initializeRoomSocket from "../util/initializeRoomSocket"
 
 export default class Chat extends React.Component {
   constructor(props) {
@@ -26,49 +17,13 @@ export default class Chat extends React.Component {
 
   componentDidMount() {
     console.log("Initializing client")
-    const socket = io("/")
-    this.socket = socket
+    this.socket = initializeRoomSocket()
 
     this.startLocalVideo()
-
-    socket.on("connect", () => {
-      console.log("Connected to signalling server, Peer ID: %s", socket.id)
-
-      /* On connect, we will send and receive data from all connected peers */
-      socket.on("peer", (data) => {
-        const peerId = data.peerId
-        const peer = initializePeer(this, socket, data)
-
-        this.setState((prevState) => ({
-          peers: {
-            ...prevState.peers,
-            [peerId]: {
-              id: peerId,
-              peer: peer,
-              name: "",
-              muted: false,
-              volume: 1,
-            },
-          },
-        }))
-      })
-
-      socket.on("destroy", (id) => {
-        this.setState((prevState) => {
-          const peers = prevState.peers
-          delete peers[id]
-          return {
-            peers: peers,
-          }
-        })
-      })
-    })
   }
 
   startLocalVideo() {
-    console.log("Requesting local video")
-    navigator.mediaDevices
-      .getUserMedia(vidOptions)
+    getWebcam()
       .then((stream) => {
         console.log("Local Video Obtained")
 
