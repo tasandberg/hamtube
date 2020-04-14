@@ -16,7 +16,6 @@ export default class Chat extends React.Component {
   }
 
   componentDidMount() {
-    console.log("Initializing client")
     this.socket = initializeRoomSocket()
 
     this.startLocalVideo()
@@ -31,13 +30,6 @@ export default class Chat extends React.Component {
         this.stream = stream
       })
       .catch((e) => console.log(e))
-  }
-
-  setName = () => {
-    this.socket.emit("set-name", this.nameBox.value)
-    this.setState({
-      name: this.nameBox.value,
-    })
   }
 
   shareStream = () => {

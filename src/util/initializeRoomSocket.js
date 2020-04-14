@@ -3,7 +3,7 @@ import initializePeer from "./peer"
 
 export default (parentComponent, roomId) => {
   const socket = io("/")
-
+  console.log("Initializing socketio connection")
   socket.on("connect", () => {
     console.log("Connected to signalling server, Peer ID: %s", socket.id)
 

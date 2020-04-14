@@ -1,26 +1,26 @@
-import React from "react";
-import classNames from "classnames";
-import { Redirect, Link } from "react-router-dom";
-import apiClient from "../util/api";
-import { Fragment } from "react";
+import React from "react"
+import classNames from "classnames"
+import { Redirect, Link } from "react-router-dom"
+import apiClient from "../util/apiClient"
+import { Fragment } from "react"
 
 export default class Home extends React.Component {
   constructor(props) {
-    super(props);
+    super(props)
 
     this.state = {
       validCode: false,
       roomCodeInput: "",
       redirectToRoom: null,
-    };
+    }
   }
 
   hasValidCode = (e) => {
     this.setState({
       validCode: e.currentTarget.value.length === 8,
       roomCodeInput: e.currentTarget.value,
-    });
-  };
+    })
+  }
 
   createRoom = () => {
     apiClient
@@ -28,24 +28,25 @@ export default class Home extends React.Component {
       .then(({ data }) => {
         this.setState({
           redirectToRoom: data.id,
-        });
+        })
       })
       .catch((e) => {
-        console.log("an error occurred");
-      });
-  };
+        console.log("an error occurred")
+      })
+  }
 
   render = () => {
-    const { redirectToRoom } = this.state;
+    const { redirectToRoom } = this.state
     if (redirectToRoom) {
-      return <Redirect to={`/room/${this.state.redirectToRoom}`} />;
+      return <Redirect to={`/room/${this.state.redirectToRoom}`} />
     }
     return (
       <Fragment>
         <nav
           className="navbar is-light"
           role="navigation"
-          aria-label="main navigation">
+          aria-label="main navigation"
+        >
           <div className="navbar-brand">
             <Link to="/" className="navbar-item">
               <h1 className="navbar-item">
@@ -77,7 +78,8 @@ export default class Home extends React.Component {
                       <button
                         type="button"
                         onClick={this.createRoom}
-                        className="button is-success">
+                        className="button is-success"
+                      >
                         Create a room
                       </button>
                     </div>
@@ -97,7 +99,8 @@ export default class Home extends React.Component {
                                 placeholder="Enter a room code"
                                 onChange={this.hasValidCode}
                                 value={this.state.roomCodeInput}
-                                ref={(el) => (this.roomCodeInput = el)}></input>
+                                ref={(el) => (this.roomCodeInput = el)}
+                              ></input>
                               <span className="icon is-right">
                                 <i
                                   className={classNames("fas fa-check", {
@@ -113,7 +116,8 @@ export default class Home extends React.Component {
                                 <a
                                   disabled={!this.state.validCode}
                                   className="button is-success"
-                                  href={`/${this.state.roomCodeInput}`}>
+                                  href={`/${this.state.roomCodeInput}`}
+                                >
                                   Go!
                                 </a>
                               </div>
@@ -129,6 +133,6 @@ export default class Home extends React.Component {
           </div>
         </section>
       </Fragment>
-    );
-  };
+    )
+  }
 }
