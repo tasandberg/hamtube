@@ -61,25 +61,24 @@ export default () => {
   };
 
   return (
-    <div className="columns is-multiline">
-      <button
-        style={{
-          position: "absolute",
-          left: "calc(50% - 53.5px)",
-          top: "100px",
-        }}
-        onClick={addVideo}
-        className="button is-primary">
-        Add video
-      </button>
-      {videos.map((v, i) => (
-        <div
-          style={{ height: "300px" }}
-          className={`column is-one-quarter ${v}`}
-          key={`video-${i}`}>
-          Video {i + 1}
+    <div className="columns">
+      <div
+        className="column is-4 has-background-dark has-text-light"
+        style={{ height: "50vh" }}>
+        Main video
+      </div>
+      <div className="column">
+        <div className="columns is-multiline">
+          {videos.map((v, i) => (
+            <div
+              style={{ alignItems: "stretch", height: "25vh" }}
+              className={`column  is-one-third ${v}`}
+              key={`video-${i}`}>
+              Video {i + 1}
+            </div>
+          ))}
         </div>
-      ))}
+      </div>
     </div>
   );
 };
