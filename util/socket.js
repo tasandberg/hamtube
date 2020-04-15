@@ -4,16 +4,20 @@ const _ = require("lodash")
 module.exports = function (server) {
   const io = require("socket.io")(server)
   io.sockets.on("error", (e) => console.log(e))
-  io.on("connection", (socket) => {
-    console.log("Connection with ID: %s", socket.id)
-    const peersToAdvertise = _.chain(io.sockets.connected)
-      .values()
-      .without(socket)
-      .value()
-    console.log(Object.keys(io.sockets.connected).length, "clients connected")
 
-    console.log("advertising peers", _.map(peersToAdvertise, "id"))
-    peersToAdvertise.forEach(function (socket2) {
+  const onConnection = (socket) => {
+    const roomId = socket.handshake.query.room
+
+    socket.join(roomId)
+
+    console.log("Connection to room %s with ID: %s", roomId, socket.id)
+
+    const connectedSocketIds = Object.keys(
+      io.sockets.adapter.rooms[roomId].sockets
+    ).filter((id) => id !== socket.id)
+    const connectedSockets = _.pick(io.sockets.connected, connectedSocketIds)
+
+    _.forEach(connectedSockets, function (socket2) {
       console.log("Advertising peer %s to %s", socket.id, socket2.id)
       socket2.emit("peer", {
         peerId: socket.id,
@@ -28,7 +32,10 @@ module.exports = function (server) {
 
     socket.on("disconnect", function (peerId) {
       console.log("Disconnecting ", socket.id)
-      console.log(Object.keys(io.sockets.connected).length, "clients connected")
+      console.log(
+        Object.keys(io.sockets.connected).length,
+        "clients connected to room " + roomId
+      )
       io.emit("destroy", socket.id)
     })
 
@@ -48,5 +55,7 @@ module.exports = function (server) {
         peerId: socket.id,
       })
     })
-  })
+  }
+
+  io.on("connection", onConnection)
 }

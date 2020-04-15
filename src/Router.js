@@ -1,9 +1,9 @@
-import React from "react";
-import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
-import Chat from "./pages/Chat";
-import KtvDashboard from "./pages/KtvDashboard";
-import Home from "./pages/Home";
-import Room from "./pages/Room";
+import React from "react"
+import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom"
+import Chat from "./pages/Chat"
+import KtvDashboard from "./pages/KtvDashboard"
+import Home from "./pages/Home"
+import Room from "./pages/Room"
 
 export default function App() {
   return (
@@ -12,9 +12,7 @@ export default function App() {
         <Route exact path="/chat">
           <Chat />
         </Route>
-        <Route exact path="/room/:roomId">
-          <Room />
-        </Route>
+        <Route exact path="/room/:roomId" component={Room} />
         <Route exact path="/ktv">
           <KtvDashboard />
         </Route>
@@ -23,5 +21,5 @@ export default function App() {
         </Route>
       </Switch>
     </Router>
-  );
+  )
 }

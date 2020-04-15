@@ -17,6 +17,8 @@ export default function (chatComponent, socket, data) {
 
   /* Handle receiving signal from new peer */
   socket.on("signal", (data) => {
+    console.log("signal")
+
     if (data.peerId === peerId && chatComponent.state.peers[peerId]) {
       if (!peer.destroyed) {
         peer.signal(data.signal)
@@ -31,6 +33,8 @@ export default function (chatComponent, socket, data) {
    * 3. Pass data through socket.io so that it is received by the other client
    */
   peer.on("signal", function (data) {
+    console.log("peer signal")
+
     socket.emit("signal", {
       signal: data,
       peerId: peerId,
