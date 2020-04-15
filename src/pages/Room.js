@@ -3,7 +3,6 @@ import io from "socket.io-client"
 import initializePeer from "../util/peer"
 import _ from "lodash"
 import RoomLayout from "../components/RoomLayout"
-import apiClient from "../util/apiClient"
 
 const vidOptions = {
   video: {
@@ -23,7 +22,7 @@ export default class Room extends React.Component {
     this.state = {
       name: undefined,
       peers: {},
-      sharing: false,
+      sharing: true,
     }
   }
 
@@ -75,8 +74,9 @@ export default class Room extends React.Component {
       .getUserMedia(vidOptions)
       .then((stream) => {
         console.log("Local Video Obtained")
-
-        this.localVideo.srcObject = stream
+        const userVideoEl = document.getElementById("local-video")
+        userVideoEl.srcObject = stream
+        this.localVideo = stream
         this.stream = stream
       })
       .catch((e) => console.log(e))
@@ -129,5 +129,14 @@ export default class Room extends React.Component {
     el.muted = !el.muted
   }
 
-  render = () => <RoomLayout />
+  render = () => {
+    console.log(Object.values(this.state.peers), "peers")
+
+    return (
+      <RoomLayout
+        userStream={this.localVideo}
+        peers={Object.values(this.state.peers)}
+      />
+    )
+  }
 }

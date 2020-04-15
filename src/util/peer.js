@@ -42,7 +42,7 @@ export default function (chatComponent, socket, data) {
   })
 
   peer.on("connect", function () {
-    if (chatComponent.state.sharing) {
+    if (chatComponent.state.sharing && chatComponent.stream) {
       console.log(chatComponent.state.sharing, "sharing " + socketId)
 
       peer.addStream(chatComponent.stream)
