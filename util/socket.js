@@ -1,11 +1,31 @@
-// const youtubedl = require("youtube-dl")
+const db = require("../models/index.js")
+const Chat = db.Chat
 const _ = require("lodash")
 
 module.exports = function (server) {
   const io = require("socket.io")(server)
   io.sockets.on("error", (e) => console.log(e))
+
+  /* Verify room  */
+  io.use((socket, next) => {
+    const roomId = socket.handshake.query.room
+    Chat.findByPk(roomId)
+      .then((data) => {
+        socket.roomId = roomId
+        return next()
+      })
+      .catch((e) => {
+        return next(new Error("Unable to locate chat"))
+      })
+  })
+
+  /* On Connect */
   io.on("connection", (socket) => {
-    console.log("Connection with ID: %s", socket.id)
+    console.log("Client %s join room %s", socket.id, socket.roomId)
+    const roomId = socket.roomId
+    const emitter = io.to(roomId)
+
+    socket.join(roomId)
     const peersToAdvertise = _.chain(io.sockets.connected)
       .values()
       .without(socket)
@@ -15,6 +35,7 @@ module.exports = function (server) {
     console.log("advertising peers", _.map(peersToAdvertise, "id"))
     peersToAdvertise.forEach(function (socket2) {
       console.log("Advertising peer %s to %s", socket.id, socket2.id)
+
       socket2.emit("peer", {
         peerId: socket.id,
         initiator: true,
@@ -29,7 +50,7 @@ module.exports = function (server) {
     socket.on("disconnect", function (peerId) {
       console.log("Disconnecting ", socket.id)
       console.log(Object.keys(io.sockets.connected).length, "clients connected")
-      io.emit("destroy", socket.id)
+      emitter.emit("destroy", socket.id)
     })
 
     socket.on("disconnect-video", function () {

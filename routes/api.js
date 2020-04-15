@@ -6,7 +6,6 @@ const Chat = db.Chat
 
 chatRouter.get("/new", (req, res) => {
   Chat.create().then((c) => {
-    console.log("HELLO")
     res.json({ id: c.id })
   })
 })
@@ -15,7 +14,6 @@ chatRouter.get("/:chatId", (req, res) => {
   Chat.findByPk(req.params.chatId)
     .then((data) => {
       if (data) {
-        console.log("chat found")
         res.json({ chat: data })
       } else {
         console.log(data)

@@ -1,7 +1,6 @@
 import Peer from "simple-peer"
 
-export default function (chatComponent, socket, data) {
-  const peerId = data.peerId
+export default function ({ socket, data, sharing, peers, peerId, stream }) {
   const socketId = socket.id
 
   const peer = new Peer({
@@ -17,7 +16,7 @@ export default function (chatComponent, socket, data) {
 
   /* Handle receiving signal from new peer */
   socket.on("signal", (data) => {
-    if (data.peerId === peerId && chatComponent.state.peers[peerId]) {
+    if (data.peerId === peerId && peers[peerId]) {
       if (!peer.destroyed) {
         peer.signal(data.signal)
       }
@@ -38,10 +37,10 @@ export default function (chatComponent, socket, data) {
   })
 
   peer.on("connect", function () {
-    if (chatComponent.state.sharing) {
-      console.log(chatComponent.state.sharing, "sharing " + socketId)
+    if (sharing) {
+      console.log(sharing, "sharing " + socketId)
 
-      peer.addStream(chatComponent.stream)
+      peer.addStream(stream)
     }
     peer.send("Hello from " + socket.id)
   })
