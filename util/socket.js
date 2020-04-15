@@ -12,11 +12,15 @@ module.exports = function (server) {
 
     console.log("Connection to room %s with ID: %s", roomId, socket.id)
 
+    // Get all Socket IDs for given room
     const connectedSocketIds = Object.keys(
       io.sockets.adapter.rooms[roomId].sockets
     ).filter((id) => id !== socket.id)
+
+    // Get Sockets for given room
     const connectedSockets = _.pick(io.sockets.connected, connectedSocketIds)
 
+    // Connect new client with all peers in room
     _.forEach(connectedSockets, function (socket2) {
       console.log("Advertising peer %s to %s", socket.id, socket2.id)
       socket2.emit("peer", {
@@ -36,11 +40,11 @@ module.exports = function (server) {
         Object.keys(io.sockets.connected).length,
         "clients connected to room " + roomId
       )
-      io.emit("destroy", socket.id)
+      io.to(roomId).emit("destroy", socket.id)
     })
 
     socket.on("disconnect-video", function () {
-      socket.broadcast.emit("disconnect-video", socket.id)
+      socket.to(roomId).emit("disconnect-video", socket.id)
     })
 
     socket.on("signal", function (data) {
@@ -48,7 +52,6 @@ module.exports = function (server) {
       if (!socket2) {
         return
       }
-      // console.log("Proxying signal from peer %s to %s", socket.id, socket2.id)
 
       socket2.emit("signal", {
         signal: data.signal,
