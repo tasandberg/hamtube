@@ -1,4 +1,5 @@
 import React from "react"
+import classNames from "classnames"
 
 const videos = [
   "has-background-primary",
@@ -30,7 +31,7 @@ const PeerVid = ({ peer }) => (
   </video>
 )
 
-export default ({ peers, userStream }) => {
+export default ({ peers, userStream, stopVideo, startVideo, videoEnabled }) => {
   return (
     <div style={{ marginTop: "0px", flexWrap: "wrap", height: "100vh" }}>
       <div
@@ -40,7 +41,29 @@ export default ({ peers, userStream }) => {
       <div className="tile is-ancestor is-gapless">
         <div className="tile is-parent is-vertical">
           <div className="tile is-parent" style={{ flexWrap: "wrap " }}>
-            <div className={`tile is-child`}>
+            <div
+              className={`tile is-child`}
+              style={{
+                position: "relative",
+                height: "25vh",
+                overflow: "hidden",
+              }}
+            >
+              <button
+                className="button has-text-white is-primary"
+                style={{ position: "absolute", bottom: "4px", right: "4px" }}
+                onClick={videoEnabled ? stopVideo : startVideo}
+                disabled={!userStream}
+              >
+                <span className="icon is-small">
+                  <i
+                    className={classNames("fas fa-lg", {
+                      "fa-video-slash": !videoEnabled,
+                      "fa-video": videoEnabled,
+                    })}
+                  />
+                </span>
+              </button>
               <video
                 autoPlay
                 className="has-background-black has-text-white"

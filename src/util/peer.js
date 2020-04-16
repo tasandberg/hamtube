@@ -17,8 +17,6 @@ export default function (chatComponent, socket, data) {
 
   /* Handle receiving signal from new peer */
   socket.on("signal", (data) => {
-    console.log("signal")
-
     if (data.peerId === peerId && chatComponent.state.peers[peerId]) {
       if (!peer.destroyed) {
         peer.signal(data.signal)
@@ -33,8 +31,6 @@ export default function (chatComponent, socket, data) {
    * 3. Pass data through socket.io so that it is received by the other client
    */
   peer.on("signal", function (data) {
-    console.log("peer signal")
-
     socket.emit("signal", {
       signal: data,
       peerId: peerId,
@@ -57,10 +53,9 @@ export default function (chatComponent, socket, data) {
     }
   })
 
+  // We are receiving a stream from this peer, feed it to respective video element
   peer.on("stream", function (stream) {
-    console.log("Im getting a stream so hard rn")
-    console.log("My id", socketId)
-    console.log("Peer id", peerId)
+    console.log("Receiving stream from " + peerId)
     const vid = document.getElementById(`${peerId}-video`)
 
     vid.srcObject = stream

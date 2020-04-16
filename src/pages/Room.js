@@ -7,8 +7,9 @@ import RoomLayout from "../components/RoomLayout"
 const vidOptions = {
   video: {
     facingMode: "user",
-    width: { min: 160, ideal: 640, max: 1280 },
-    height: { min: 120, ideal: 360, max: 720 },
+    width: { min: 160, ideal: 400, max: 1280 },
+    height: { min: 120, ideal: 400, max: 720 },
+    aspectRation: { ideal: 1 },
   },
   audio: true,
 }
@@ -22,7 +23,7 @@ export default class Room extends React.Component {
     this.state = {
       name: undefined,
       peers: {},
-      sharing: true,
+      videoEnabled: true,
     }
   }
 
@@ -77,7 +78,8 @@ export default class Room extends React.Component {
         const userVideoEl = document.getElementById("local-video")
         userVideoEl.srcObject = stream
         this.localVideo = stream
-        this.stream = stream
+
+        if (this.state.videoEnabled) this.shareStream()
       })
       .catch((e) => console.log(e))
   }
@@ -90,11 +92,13 @@ export default class Room extends React.Component {
   }
 
   shareStream = () => {
+    console.log("Sharing local video stream")
+
     this.setState({
-      sharing: true,
+      videoEnabled: true,
     })
 
-    this.peerStream = this.stream.clone()
+    this.peerStream = this.localVideo.clone()
 
     Object.keys(this.state.peers).forEach((id) => {
       const { peer } = this.state.peers[id]
@@ -103,8 +107,10 @@ export default class Room extends React.Component {
   }
 
   stopStream = () => {
+    console.log("Disconnecting local video from peers")
+
     this.setState({
-      sharing: false,
+      videoEnabled: false,
     })
 
     // Disable the tracks of the stream
@@ -130,11 +136,14 @@ export default class Room extends React.Component {
   }
 
   render = () => {
-    console.log(Object.values(this.state.peers), "peers")
+    console.log(this.state.videoEnabled, "videnabled")
 
     return (
       <RoomLayout
         userStream={this.localVideo}
+        stopVideo={this.stopStream}
+        startVideo={this.shareStream}
+        videoEnabled={this.state.videoEnabled}
         peers={Object.values(this.state.peers)}
       />
     )
