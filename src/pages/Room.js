@@ -71,6 +71,7 @@ export default class Room extends React.Component {
 
   startLocalVideo() {
     console.log("Requesting local video")
+    console.log(navigator.mediaDevices.getSupportedConstraints())
     navigator.mediaDevices
       .getUserMedia(vidOptions)
       .then((stream) => {

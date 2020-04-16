@@ -19,13 +19,10 @@ const videos = [
 const PeerVid = ({ peer }) => (
   <video
     autoPlay
-    className="has-background-black has-text-white"
     muted={peer.muted}
     playsInline
     id={`${peer.id}-video`}
-    style={{
-      width: "100%",
-    }}
+    style={{ minWidth: "100%", minHeight: "100%", objectFit: "cover" }}
   >
     asdfasdf
   </video>
@@ -40,13 +37,14 @@ export default ({ peers, userStream, stopVideo, startVideo, videoEnabled }) => {
       ></div>
       <div className="tile is-ancestor is-gapless">
         <div className="tile is-parent is-vertical">
-          <div className="tile is-parent" style={{ flexWrap: "wrap " }}>
+          {/* Peer Videos Container Row 1*/}
+          <div className="tile is-parent" style={{ flexWrap: "wrap" }}>
             <div
               className={`tile is-child`}
               style={{
                 position: "relative",
-                height: "25vh",
                 overflow: "hidden",
+                height: "25vh",
               }}
             >
               <button
@@ -66,29 +64,41 @@ export default ({ peers, userStream, stopVideo, startVideo, videoEnabled }) => {
               </button>
               <video
                 autoPlay
-                className="has-background-black has-text-white"
                 playsInline
                 id="local-video"
                 style={{
-                  width: "100%",
+                  minWidth: "100%",
+                  minHeight: "100%",
+                  objectFit: "cover",
                 }}
               >
                 asdfasdf
               </video>
             </div>
-            {peers.slice(0, 4).map((peer, i) => (
+            {peers.slice(0, 3).map((peer, i) => (
               <div
-                style={{ width: "100%" }}
                 className={`tile is-child`}
                 key={`video-${i}`}
+                style={{
+                  position: "relative",
+                  overflow: "hidden",
+                  height: "25vh",
+                }}
               >
                 <PeerVid peer={peer} />
               </div>
             ))}
           </div>
-          <div className="tile is-parent" style={{ flexWrap: "wrap " }}>
+          <div className="tile is-parent">
             {peers.slice(4, 8).map((peer, i) => (
-              <div className={`tile is-child`}>
+              <div
+                className={`tile is-child`}
+                style={{
+                  position: "relative",
+                  overflow: "hidden",
+                  height: "25vh",
+                }}
+              >
                 <PeerVid peer={peer} id={i} />
               </div>
             ))}
