@@ -1,0 +1,44 @@
+.song-list-modal-wrapper {
+  position: absolute;
+  height: 100%;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 0;
+  background: rgba(0, 0, 0, 0.08);
+  opacity: 0;
+
+  * {
+    font-size: 0.7rem;
+  }
+
+  .song-list-modal-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    z-index: 501;
+    overflow: hidden;
+  }
+
+  .song-list-modal {
+    width: 60%;
+    height: 95%;
+    position: absolute;
+    top: 2.5%;
+    left: 100%;
+    background: white;
+    transition: 500ms ease-in-out;
+    padding: 1rem;
+    border-radius: 5px 0px 0 5px;
+  }
+
+  &.is-active {
+    left: 0;
+    opacity: 1;
+    z-index: 500;
+
+    .song-list-modal {
+      left: 40%;
+    }
+  }
+}

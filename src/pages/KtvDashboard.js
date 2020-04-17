@@ -1,9 +1,16 @@
 import React from "react"
 import { List } from "immutable"
 import { extractVideoData, validUrl } from "../util/youtube-data"
-
 import VideoPlayer from "../components/VideoPlayer"
+import SongList from "../components/SongList"
 
+const Logo = () => (
+  <div className="logo">
+    <h1 className="title is-4">
+      Hamtube <i className="fas fa-bacon has-text-danger" />
+    </h1>
+  </div>
+)
 // https://www.youtube.com/watch?v=KUl7nLhM7UY
 export default class KtvDashboard extends React.Component {
   constructor(props) {
@@ -14,6 +21,7 @@ export default class KtvDashboard extends React.Component {
       queueInputValue: "",
       linkPreview: null,
       nowPlaying: null,
+      songListOpen: false,
     }
   }
 
@@ -87,71 +95,37 @@ export default class KtvDashboard extends React.Component {
     }))
   }
 
+  openMenu = () => {
+    this.setState({
+      songListOpen: true,
+    })
+  }
+
+  closeMenu = () => {
+    this.setState({
+      songListOpen: false,
+    })
+  }
+
   render() {
     const { songQueue, linkPreview, nowPlaying } = this.state
 
     return (
-      <section className="section">
-        <div className="container">
-          <div className="columns">
-            <div className="column is-two-thirds">
-              {nowPlaying ? (
-                <VideoPlayer onEnd={this.songEnded} resource={nowPlaying} />
-              ) : null}
-            </div>
-            <div className="column is-one-thirdr">
-              <h3 className="title is-4">Upcoming Songs</h3>
-              <input
-                className="input"
-                type="text"
-                value={this.state.queueInputValue}
-                placeholder="Add a song!"
-                onKeyDown={this.addSong}
-                onChange={this.queueInputHandler}
-                ref={(input) => (this.queueInput = input)}
-              />
-              <hr />
-              {songQueue.map((song, i) => (
-                <article className="media" key={`${song}-${i}`}>
-                  <figure className="media-left">
-                    <p className="image is-64x64">
-                      <img alt="video preview" src={song.thumbnail_url} />
-                    </p>
-                  </figure>
-                  <div className="media-content">
-                    <div className="content">{song.title}</div>
-                  </div>
-                  <div className="media-right">
-                    <button
-                      className="delete"
-                      onClick={() => this.removeQueueSong(i)}
-                    />
-                  </div>
-                </article>
-              ))}
-              {linkPreview ? (
-                <article
-                  className="media"
-                  key={`${linkPreview.title}-preview`}
-                  style={{ opacity: "0.5" }}
-                >
-                  <figure className="media-left">
-                    <p className="image is-64x64">
-                      <img
-                        alt="video preview"
-                        src={linkPreview.thumbnail_url}
-                      />
-                    </p>
-                  </figure>
-                  <div className="media-content">
-                    <div className="content">{linkPreview.title}</div>
-                  </div>
-                </article>
-              ) : null}
-            </div>
-          </div>
+      <div>
+        <Logo />
+        <div className="youtube-container">
+          <SongList
+            closeModal={this.closeMenu}
+            isActive={this.state.songListOpen}
+          />
+          <button className="button songlist-button" onClick={this.openMenu}>
+            <span>Song List</span>
+            <span className="icon is-small">
+              <i className="fas fa-list"></i>
+            </span>
+          </button>
         </div>
-      </section>
+      </div>
     )
   }
 }

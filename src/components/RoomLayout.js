@@ -1,65 +1,51 @@
-import React from "react";
-
-const colors = [
-  "has-background-primary",
-  "has-background-info",
-  "has-background-warning",
-  "has-background-danger",
-  "has-background-success",
-  // "has-background-primary",
-  // "has-background-link",
-  // "has-background-light",
-  // "has-background-grey-light",
-  // "has-background-primary",
-  // "has-background-danger",
-  // "has-background-success",
-];
+import React from "react"
+import KtvDashboard from "../pages/KtvDashboard"
 
 const VideoBox = ({ id, muted }) => (
-  <div className="video-grid-tile">
-    <video autoPlay muted={muted} playsInline id={id}>
-      asdfasdf
-    </video>
+  <div className={`video-box`}>
+    <div className="video-box-inner">
+      <div className="video-box-video">
+        <video autoPlay muted={muted} playsInline id={id}>
+          asdfasdf
+        </video>
+      </div>
+    </div>
   </div>
-);
+)
+
+const EmptyBox = () => (
+  <div className={`video-box`}>
+    <div className="video-box-inner has-background-dark ">
+      <div className="section">
+        <h2 className="title has-text-white is-4">You're the only one here!</h2>
+        <h3 className="subtitle">
+          <button className="button is-primary">Invite some friends</button>
+        </h3>
+      </div>
+    </div>
+  </div>
+)
 
 export default ({ peers, userStream, stopVideo, startVideo, videoEnabled }) => {
-  const rows = Math.ceil(peers.length / 4);
-  console.log(rows);
-  console.log(peers);
   return (
-    <div
-      style={{ marginTop: "0px", flexWrap: "wrap", height: "100vh" }}
-      className="container">
+    <div className="video-container has-background-dark">
+      <div className="karaoke-container has-background-light">
+        <KtvDashboard />
+      </div>
       <div className="video-grid">
-        {/* Main Karaoke Video */}
-        <div className="karaoke-container has-background-dark has-text-light">
-          <div className="mock-video">Karaoke Video</div>
-        </div>
-        {/* Peer Videos Container Row 1*/}
-        <div className="video-grid-row">
-          <VideoBox key={"local-video-1"} id="local-video" muted={false} />
-          {peers.slice(0, 3).map((peer) => (
+        <VideoBox key={"local-video-1"} id="local-video" muted={false} />
+        {peers.length > 0 ? (
+          peers.map((peer) => (
             <VideoBox
               key={peer.id}
               id={`${peer.id}-video`}
               muted={peer.muted}
             />
-          ))}
-        </div>
-        {/* Peer Videos Container Row 2*/}
-        {/* {rows > 1 ? (
-          <div className="video-grid-row">
-            {peers.slice(4, 8).map((peer) => (
-              <VideoBox
-                key={peer.id}
-                id={`${peer.id}-video`}
-                muted={peer.muted}
-              />
-            ))}
-          </div>
-        ) : null} */}
+          ))
+        ) : (
+          <EmptyBox />
+        )}
       </div>
     </div>
-  );
-};
+  )
+}

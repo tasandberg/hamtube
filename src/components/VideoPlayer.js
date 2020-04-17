@@ -83,7 +83,7 @@ class VideoPlayer extends React.Component {
         />
         <br />
         <progress
-          class="progress is-primary"
+          className="progress is-primary"
           value={this.state.progress}
           max="100"
         ></progress>

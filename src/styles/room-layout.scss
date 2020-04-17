@@ -1,34 +1,86 @@
+@import "~bulma/sass/utilities/initial-variables.sass";
+
+$ui-padding: 0.5rem;
+
+.logo {
+  position: absolute;
+  top: $ui-padding;
+  left: $ui-padding;
+}
+
+.songlist-button {
+  position: absolute;
+  right: $ui-padding;
+  top: $ui-padding;
+}
+
+.video-container {
+  height: 100vh;
+  width: 100vw;
+  max-width: 1300px;
+  margin: 0 auto;
+}
+
+.karaoke-container {
+  min-height: 40%;
+}
 .video-grid {
+  // max-height: 30vh;
   display: flex;
-  flex-direction: column;
-  // align-items: stretch;
-  min-height: 100%;
+  flex-wrap: wrap;
+}
 
-  .karaoke-container {
-    flex-grow: 1;
-    min-height: 50vh;
+.video-box {
+  flex: 1 0 auto;
+  min-width: 25%;
+  position: relative;
+  // max-height: 30vh;
+
+  &:after {
+    content: "";
+    float: left;
+    display: block;
+    padding-top: 100%;
   }
 
-  .video-grid-row {
-    flex-grow: 1;
-    // height: 100%;
+  &-inner {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: 0;
     display: flex;
-    flex-direction: row;
-    overflow: hidden;
-    max-height: 25vh;
+    align-items: center;
+    justify-content: center;
   }
 
-  .video-grid-tile {
-    flex-grow: 1;
+  .video-box-video {
+    position: relative;
+    width: 100%;
+    height: 100%;
     overflow: hidden;
-    border: 2px solid red;
-    // position: relative;
 
     video {
-      // position: absolute;
-      // top: -25%;
+      position: absolute;
       min-width: 100%;
       object-fit: cover;
+      min-height: 100%;
     }
+  }
+}
+
+.youtube-container {
+  width: 100%;
+  height: 50vh;
+  background: skyblue;
+  overflow: hidden;
+}
+
+@media (min-width: $desktop) {
+  $ui-padding: 1rem;
+
+  .video-container {
+    width: 80vw;
+    float: left;
   }
 }
