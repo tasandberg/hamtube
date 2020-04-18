@@ -1,5 +1,20 @@
-import React from "react"
-import KtvDashboard from "../pages/KtvDashboard"
+import React from "react";
+import KtvDashboard from "../pages/KtvDashboard";
+
+const colors = [
+  "has-background-primary",
+  "has-background-info",
+  "has-background-warning",
+  "has-background-danger",
+  "has-background-success",
+  // "has-background-primary",
+  // "has-background-link",
+  // "has-background-light",
+  // "has-background-grey-light",
+  // "has-background-primary",
+  // "has-background-danger",
+  // "has-background-success",
+];
 
 const VideoBox = ({ id, muted }) => (
   <div className={`video-box`}>
@@ -11,7 +26,7 @@ const VideoBox = ({ id, muted }) => (
       </div>
     </div>
   </div>
-)
+);
 
 const EmptyBox = () => (
   <div className={`video-box`}>
@@ -24,16 +39,16 @@ const EmptyBox = () => (
       </div>
     </div>
   </div>
-)
+);
 
 export default ({ peers, userStream, stopVideo, startVideo, videoEnabled }) => {
   return (
     <div className="video-container has-background-dark">
       <div className="karaoke-container has-background-light">
         <KtvDashboard />
+        <VideoBox key={"local-video-1"} id="local-video" muted={false} />
       </div>
       <div className="video-grid">
-        <VideoBox key={"local-video-1"} id="local-video" muted={false} />
         {peers.length > 0 ? (
           peers.map((peer) => (
             <VideoBox
@@ -47,5 +62,5 @@ export default ({ peers, userStream, stopVideo, startVideo, videoEnabled }) => {
         )}
       </div>
     </div>
-  )
-}
+  );
+};

@@ -22,37 +22,36 @@ $ui-padding: 0.5rem;
 }
 
 .karaoke-container {
-  min-height: 40%;
+  height: 50vh;
+  display: flex;
+  flex-direction: row;
+  * {
+    flex: 1;
+  }
 }
 .video-grid {
   // max-height: 30vh;
   display: flex;
   flex-wrap: wrap;
+  height: 50vh;
 }
 
 .video-box {
   flex: 1 0 auto;
-  min-width: 25%;
   position: relative;
   // max-height: 30vh;
+  max-width: 50%;
 
-  &:after {
-    content: "";
-    float: left;
-    display: block;
-    padding-top: 100%;
-  }
-
-  &-inner {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    top: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+  // &-inner {
+  //   position: absolute;
+  //   left: 0;
+  //   right: 0;
+  //   bottom: 0;
+  //   top: 0;
+  //   display: flex;
+  //   align-items: center;
+  //   justify-content: center;
+  // }
 
   .video-box-video {
     position: relative;
@@ -70,17 +69,16 @@ $ui-padding: 0.5rem;
 }
 
 .youtube-container {
-  width: 100%;
+  width: 50%;
   height: 50vh;
   background: skyblue;
   overflow: hidden;
 }
 
-@media (min-width: $desktop) {
+@media (min-width: $widescreen) {
   $ui-padding: 1rem;
 
   .video-container {
     width: 80vw;
-    float: left;
   }
 }
