@@ -1,13 +1,5 @@
 @import "~bulma/sass/utilities/initial-variables.sass";
 
-$ui-padding: 0.5rem;
-
-.logo {
-  position: absolute;
-  top: $ui-padding;
-  left: $ui-padding;
-}
-
 .songlist-button {
   position: absolute;
   right: $ui-padding;
@@ -19,6 +11,7 @@ $ui-padding: 0.5rem;
   width: 100vw;
   max-width: 1300px;
   margin: 0 auto;
+  position: relative;
 }
 
 .karaoke-container {
@@ -34,24 +27,14 @@ $ui-padding: 0.5rem;
   display: flex;
   flex-wrap: wrap;
   height: 50vh;
+  justify-content: center;
 }
 
 .video-box {
   flex: 1 0 auto;
   position: relative;
-  // max-height: 30vh;
+  background-color: whitesmoke;
   max-width: 50%;
-
-  // &-inner {
-  //   position: absolute;
-  //   left: 0;
-  //   right: 0;
-  //   bottom: 0;
-  //   top: 0;
-  //   display: flex;
-  //   align-items: center;
-  //   justify-content: center;
-  // }
 
   .video-box-video {
     position: relative;
@@ -76,8 +59,6 @@ $ui-padding: 0.5rem;
 }
 
 @media (min-width: $widescreen) {
-  $ui-padding: 1rem;
-
   .video-container {
     width: 80vw;
   }

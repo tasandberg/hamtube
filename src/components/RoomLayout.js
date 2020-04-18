@@ -1,5 +1,5 @@
-import React from "react";
-import KtvDashboard from "../pages/KtvDashboard";
+import React from "react"
+import KtvDashboard from "../pages/KtvDashboard"
 
 const colors = [
   "has-background-primary",
@@ -14,7 +14,7 @@ const colors = [
   // "has-background-primary",
   // "has-background-danger",
   // "has-background-success",
-];
+]
 
 const VideoBox = ({ id, muted }) => (
   <div className={`video-box`}>
@@ -26,24 +26,29 @@ const VideoBox = ({ id, muted }) => (
       </div>
     </div>
   </div>
-);
+)
 
 const EmptyBox = () => (
-  <div className={`video-box`}>
-    <div className="video-box-inner has-background-dark ">
-      <div className="section">
-        <h2 className="title has-text-white is-4">You're the only one here!</h2>
-        <h3 className="subtitle">
-          <button className="button is-primary">Invite some friends</button>
-        </h3>
-      </div>
-    </div>
+  <div
+    className={`video-box has-background-info`}
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center",
+      alignItems: "center",
+    }}
+  >
+    <h2 className="title has-text-white">You're the only one here!</h2>
+    <h3 className="subtitle">
+      <button className="button is-primary">Invite some friends</button>
+    </h3>
   </div>
-);
+)
 
-export default ({ peers, userStream, stopVideo, startVideo, videoEnabled }) => {
+export default ({ children, peers }) => {
   return (
     <div className="video-container has-background-dark">
+      {children}
       <div className="karaoke-container has-background-light">
         <KtvDashboard />
         <VideoBox key={"local-video-1"} id="local-video" muted={false} />
@@ -62,5 +67,5 @@ export default ({ peers, userStream, stopVideo, startVideo, videoEnabled }) => {
         )}
       </div>
     </div>
-  );
-};
+  )
+}

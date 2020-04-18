@@ -1,0 +1,27 @@
+.karaoke-controls-container {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+}
+
+.karaoke-controls-btn {
+  position: absolute;
+  height: 4rem;
+  width: 4rem;
+  border-radius: 100%;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+#karaoke-invite-btn {
+  bottom: $ui-padding;
+  right: $ui-padding;
+}
+
+#karaoke-playlist-btn {
+  bottom: $ui-padding;
+  left: $ui-padding;
+}

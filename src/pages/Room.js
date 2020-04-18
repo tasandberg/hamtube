@@ -3,6 +3,7 @@ import io from "socket.io-client"
 import initializePeer from "../util/peer"
 import _ from "lodash"
 import RoomLayout from "../components/RoomLayout"
+import KaraokeControls from "../components/KaraokeControls"
 
 const vidOptions = {
   video: {
@@ -145,7 +146,9 @@ export default class Room extends React.Component {
         startVideo={this.shareStream}
         videoEnabled={this.state.videoEnabled}
         peers={Object.values(this.state.peers)}
-      />
+      >
+        <KaraokeControls />
+      </RoomLayout>
     )
   }
 }
