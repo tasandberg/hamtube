@@ -1,6 +1,6 @@
 import React from "react"
 
-export default () => {
+export default ({ openSongList }) => {
   return (
     <div className="karaoke-controls-container">
       <button
@@ -11,6 +11,7 @@ export default () => {
       </button>
       <button
         id="karaoke-playlist-btn"
+        onClick={openSongList}
         className="karaoke-controls-btn is-large button is-primary is-outline"
       >
         <i className="fas fa-music"></i>

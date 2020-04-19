@@ -4,6 +4,7 @@ import initializePeer from "../util/peer"
 import _ from "lodash"
 import RoomLayout from "../components/RoomLayout"
 import KaraokeControls from "../components/KaraokeControls"
+import SongList from "../components/SongList"
 
 const vidOptions = {
   video: {
@@ -26,6 +27,7 @@ export default class Room extends React.Component {
       name: undefined,
       peers: {},
       videoEnabled: true,
+      songListOpen: false,
     }
   }
 
@@ -133,6 +135,14 @@ export default class Room extends React.Component {
     this.peerStream = null
   }
 
+  openSongList = () => {
+    this.setState({ songListOpen: true })
+  }
+
+  closeSongList = () => {
+    this.setState({ songListOpen: false })
+  }
+
   toggleMute = (id) => {
     const el = this.peerVids[id]
     el.muted = !el.muted
@@ -147,7 +157,11 @@ export default class Room extends React.Component {
         videoEnabled={this.state.videoEnabled}
         peers={Object.values(this.state.peers)}
       >
-        <KaraokeControls />
+        <SongList
+          isActive={this.state.songListOpen}
+          close={this.closeSongList}
+        />
+        <KaraokeControls openSongList={this.openSongList} />
       </RoomLayout>
     )
   }
