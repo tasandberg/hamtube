@@ -4,7 +4,7 @@ import initializePeer from "../util/peer"
 import _ from "lodash"
 import RoomLayout from "../components/RoomLayout"
 import KaraokeControls from "../components/KaraokeControls"
-import SongList from "../components/SongList"
+import SongList from "../components/SongInput"
 
 const vidOptions = {
   video: {
@@ -37,7 +37,7 @@ export default class Room extends React.Component {
     const socket = io("/", { query: `room=${this.roomId}` })
     this.socket = socket
 
-    this.startLocalVideo()
+    // this.startLocalVideo()
 
     socket.on("connect", () => {
       console.log("Connected to signalling server, Peer ID: %s", socket.id)
@@ -157,11 +157,12 @@ export default class Room extends React.Component {
         videoEnabled={this.state.videoEnabled}
         peers={Object.values(this.state.peers)}
       >
+        {/* These Children will render inside of the Youtube Box, upper left */}
         <SongList
           isActive={this.state.songListOpen}
+          activate={this.openSongList}
           close={this.closeSongList}
         />
-        <KaraokeControls openSongList={this.openSongList} />
       </RoomLayout>
     )
   }

@@ -2,7 +2,7 @@ import React from "react"
 import { List } from "immutable"
 import { extractVideoData, validUrl } from "../util/youtube-data"
 import VideoPlayer from "../components/VideoPlayer"
-import SongList from "../components/SongList"
+import SongList from "../components/SongInput"
 
 const Logo = () => (
   <div className="logo">
@@ -110,10 +110,6 @@ export default class KtvDashboard extends React.Component {
   render() {
     const { songQueue, linkPreview, nowPlaying } = this.state
 
-    return (
-      <div className="youtube-container">
-        <Logo />
-      </div>
-    )
+    return <div className="youtube-container">{this.props.children}</div>
   }
 }

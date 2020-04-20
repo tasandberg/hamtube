@@ -48,9 +48,8 @@ const EmptyBox = () => (
 export default ({ children, peers }) => {
   return (
     <div className="video-container has-background-dark">
-      {children}
-      <div className="karaoke-container has-background-light">
-        <KtvDashboard />
+      <div className="karaoke-container">
+        <KtvDashboard>{children}</KtvDashboard>
         <VideoBox key={"local-video-1"} id="local-video" muted={false} />
       </div>
       <div className="video-grid">

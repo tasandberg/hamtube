@@ -18,9 +18,7 @@
   height: 50vh;
   display: flex;
   flex-direction: row;
-  * {
-    flex: 1;
-  }
+  position: relative;
 }
 .video-grid {
   // max-height: 30vh;
@@ -54,8 +52,9 @@
 .youtube-container {
   width: 50%;
   height: 50vh;
-  background: skyblue;
+  background: black;
   overflow: hidden;
+  position: relative;
 }
 
 @media (min-width: $widescreen) {
