@@ -1,5 +1,25 @@
 // const youtubedl = require("youtube-dl")
+
+const getNumberWithOrdinal = require("./numberHelper")
 const _ = require("lodash")
+
+/**
+ * Dictionary of songQueues by RoomID
+ * Individual SongQueue Shape:
+ *  roomId: [
+ *    { singerId: socketId, videoData: videoData}
+ *  ]
+ */
+const songQueues = {}
+
+function initializeSongQueue(roomId) {
+  if (songQueues[roomId]) return
+  songQueues[roomId] = []
+}
+
+function addToSongQueue(roomId, videoData, singerId) {
+  songQueues[roomId].push({ singerId, videoData })
+}
 
 module.exports = function (server) {
   const io = require("socket.io")(server)
@@ -9,18 +29,18 @@ module.exports = function (server) {
     const roomId = socket.handshake.query.room
 
     socket.join(roomId)
+    initializeSongQueue(roomId)
 
     console.log("Connection to room %s with ID: %s", roomId, socket.id)
 
-    // Get all Socket IDs for given room
+    /**
+     * Peer Signaling Connections
+     */
     const connectedSocketIds = Object.keys(
       io.sockets.adapter.rooms[roomId].sockets
     ).filter((id) => id !== socket.id)
-
-    // Get Sockets for given room
     const connectedSockets = _.pick(io.sockets.connected, connectedSocketIds)
 
-    // Connect new client with all peers in room
     _.forEach(connectedSockets, function (socket2) {
       console.log("Advertising peer %s to %s", socket.id, socket2.id)
       socket2.emit("peer", {
@@ -33,6 +53,16 @@ module.exports = function (server) {
         initiator: false,
       })
     })
+
+    /**
+     * Song Queue Functions
+     */
+
+    const addToSongQueue = (videoData) => {
+      songQueues[roomId].push({ singerId: socket.id, videoData })
+    }
+
+    // Event Handlers
 
     socket.on("disconnect", function (peerId) {
       console.log("Disconnecting ", socket.id)
@@ -56,6 +86,24 @@ module.exports = function (server) {
       socket2.emit("signal", {
         signal: data.signal,
         peerId: socket.id,
+      })
+    })
+
+    socket.on("add-song", (data) => {
+      addToSongQueue(data)
+      console.log(
+        `Song added for room ${roomId}. ${songQueues[roomId].length} total.`
+      )
+
+      // Send event to all except user who added song
+      socket.to(roomId).emit("notification", {
+        message: `A new song was just added to the queue 👻 (${songQueues[roomId].length} total)`,
+      })
+
+      io.to(socket.id).emit("song-added-success", {
+        message: `Song added. It's ${getNumberWithOrdinal(
+          songQueues[roomId].length
+        )} in line. 🔥`,
       })
     })
   }

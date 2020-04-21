@@ -3,8 +3,8 @@ import io from "socket.io-client"
 import initializePeer from "../util/peer"
 import _ from "lodash"
 import RoomLayout from "../components/RoomLayout"
-import KaraokeControls from "../components/KaraokeControls"
 import SongList from "../components/SongInput"
+import NotificationBar from "../components/NotificationBar"
 
 const vidOptions = {
   video: {
@@ -28,6 +28,7 @@ export default class Room extends React.Component {
       peers: {},
       videoEnabled: true,
       songListOpen: false,
+      songInputNotification: "",
     }
   }
 
@@ -70,6 +71,29 @@ export default class Room extends React.Component {
             peers: peers,
           }
         })
+      })
+
+      socket.on("notification", (data) => {
+        this.setState({ notification: null })
+        this.setState({ notification: data.message })
+
+        setTimeout(() => {
+          if (this.state.notification === data.message) {
+            this.setState({ notification: null })
+          }
+        }, 5000)
+      })
+
+      socket.on("song-added-success", (data) => {
+        this.setState({
+          songInputNotification: data.message,
+        })
+
+        setTimeout(() => {
+          this.setState({
+            songInputNotification: null,
+          })
+        }, 3000)
       })
     })
   }
@@ -143,6 +167,10 @@ export default class Room extends React.Component {
     this.setState({ songListOpen: false })
   }
 
+  addSong = (data) => {
+    this.socket.emit("add-song", data)
+  }
+
   toggleMute = (id) => {
     const el = this.peerVids[id]
     el.muted = !el.muted
@@ -162,7 +190,10 @@ export default class Room extends React.Component {
           isActive={this.state.songListOpen}
           activate={this.openSongList}
           close={this.closeSongList}
+          addSong={this.addSong}
+          songInputNotification={this.state.songInputNotification}
         />
+        <NotificationBar notification={this.state.notification} />
       </RoomLayout>
     )
   }

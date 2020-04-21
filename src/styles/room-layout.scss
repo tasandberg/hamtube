@@ -9,7 +9,6 @@
 .video-container {
   height: 100vh;
   width: 100vw;
-  max-width: 1300px;
   margin: 0 auto;
   position: relative;
 }
@@ -58,7 +57,7 @@
 }
 
 @media (min-width: $widescreen) {
-  .video-container {
-    width: 80vw;
-  }
+  // .video-container {
+  //   width: 80vw;
+  // }
 }
