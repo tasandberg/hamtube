@@ -65,25 +65,12 @@ export default function (chatComponent, socket, data) {
   // We are receiving a stream from this peer, feed it to respective video element
   peer.on("stream", function (stream) {
     console.log("Receiving stream from " + peerId)
-    function addPeerVid(stream) {
-      console.log("Attempting to add peervid")
-
-      const vidId = `${peerId}-video`
-      console.log(vidId)
-      const vid = document.getElementById(vidId)
-      if (!vid) {
-        console.log("element not in dom, retrying")
-        setTimeout(() => {
-          addPeerVid()
-        }, 1000)
-      } else if (chatComponent.peerVids[peerId]) {
-        console.log("Already streaming peer")
-      } else {
-        console.log("Element found, adding stream")
-        vid.srcObject = stream
-      }
-    }
-    addPeerVid(stream)
+    chatComponent.setState((prevState) => ({
+      videoStreams: {
+        ...prevState.videoStreams,
+        [peerId]: stream,
+      },
+    }))
   })
 
   peer.on("data", (data) => {

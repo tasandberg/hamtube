@@ -33,8 +33,6 @@ export default ({
         console.log(error)
         setLinkPreview(null)
       } else if (data.thumbnail_url || data.title) {
-        console.log(data)
-
         setLinkPreview(data)
       }
     })

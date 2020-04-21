@@ -55,11 +55,32 @@ module.exports = function (server) {
     })
 
     /**
+     * General Use Room Functions
+     */
+    const notifyRoom = (message, excludeUser = false) => {
+      let notifier = excludeUser ? socket.to(roomId) : io.to(roomId)
+      notifier.emit("notification", { message })
+    }
+
+    /**
      * Song Queue Functions
      */
 
     const addToSongQueue = (videoData) => {
       songQueues[roomId].push({ singerId: socket.id, videoData })
+    }
+
+    const cycleSong = () => {
+      const currentSong = songQueues[roomId].shift()
+      const upNext = songQueues[roomId][0]
+
+      io.to(roomId).emit("new-song", {
+        currentSong,
+        currentSinger: currentSong.singerId,
+        upNext,
+      })
+
+      notifyRoom(`Now playing: ${currentSong.videoData.title}`)
     }
 
     // Event Handlers
@@ -92,20 +113,27 @@ module.exports = function (server) {
 
     socket.on("add-song", (data) => {
       addToSongQueue(data)
-      console.log(
-        `Song added for room ${roomId}. ${songQueues[roomId].length} total.`
-      )
+      const queueLength = songQueues[roomId].length
+      console.log(`Song added for room ${roomId}. ${queueLength} total.`)
 
       // Send event to all except user who added song
-      socket.to(roomId).emit("notification", {
-        message: `A new song was just added to the queue 👻 (${songQueues[roomId].length} total)`,
-      })
+      notifyRoom(
+        `A new song was just added to the queue 👻 (${queueLength} total)`,
+        true
+      )
 
+      // Send success feedback to user
       io.to(socket.id).emit("song-added-success", {
         message: `Song added. It's ${getNumberWithOrdinal(
           songQueues[roomId].length
         )} in line. 🔥`,
       })
+
+      if (queueLength === 1) {
+        console.log("No songs")
+
+        cycleSong()
+      }
     })
   }
 

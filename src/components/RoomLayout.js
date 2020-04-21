@@ -67,7 +67,6 @@ export default ({ children, peers, currentSinger }) => {
         )}
       </div>
       <div className="video-grid">
-        <VideoBox id="local-video" muted={true} />
         {peers.length > 0 ? (
           peers.map((peer) => (
             <VideoBox

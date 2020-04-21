@@ -21,7 +21,7 @@ export default class Room extends React.Component {
     super(props)
 
     this.roomId = props.match.params.roomId
-    this.peerVids = {}
+    this.videoStreams = {}
     this.peerStream = null
     this.state = {
       name: undefined,
@@ -29,7 +29,31 @@ export default class Room extends React.Component {
       videoEnabled: true,
       songListOpen: false,
       songInputNotification: "",
+      currentSinger: null,
+      currentSong: null,
+      upNext: null,
+      videoStreams: {},
     }
+  }
+
+  componentDidUpdate(prevProps, prevState, snapshot) {
+    const { isEmpty, isEqual } = _
+    // Check if videoStreams
+    if (!isEmpty(this.state.videoStreams)) {
+      if (
+        !isEqual(prevState.videoStreams, this.state.videoStreams) ||
+        !isEqual(prevState.currentSong, this.state.currentSong)
+      ) {
+        this.reattachVideos()
+      }
+    }
+  }
+
+  reattachVideos() {
+    _.each(this.state.videoStreams, (stream, id) => {
+      const el = document.getElementById(`${id}-video`)
+      if (el) el.srcObject = stream
+    })
   }
 
   componentDidMount() {
@@ -65,10 +89,12 @@ export default class Room extends React.Component {
 
       socket.on("destroy", (id) => {
         this.setState((prevState) => {
-          const peers = prevState.peers
+          const { peers, videoStreams } = prevState
           delete peers[id]
+          delete videoStreams[id]
           return {
-            peers: peers,
+            peers,
+            videoStreams,
           }
         })
       })
@@ -95,7 +121,36 @@ export default class Room extends React.Component {
           })
         }, 3000)
       })
+
+      socket.on("new-song", ({ currentSong, currentSinger, upNext }) => {
+        console.log(arguments, "new-song")
+
+        this.setState({
+          currentSong,
+          currentSinger,
+          upNext,
+        })
+      })
     })
+  }
+
+  // Build a peer-like object to pass along with peers to layout
+  buildLocalPeer() {
+    return {
+      id: "local",
+      muted: true,
+      volume: 0,
+    }
+  }
+
+  getCurrentSinger() {
+    const { currentSinger } = this.state
+    if (!currentSinger) return
+    if (currentSinger === this.socket.id) {
+      return this.buildLocalPeer()
+    } else {
+      return this.state.peers[currentSinger]
+    }
   }
 
   startLocalVideo() {
@@ -104,12 +159,13 @@ export default class Room extends React.Component {
       .getUserMedia(vidOptions)
       .then((stream) => {
         console.log("Local Video Obtained")
-        const userVideoEl = document.getElementById("local-video")
-        console.log(userVideoEl)
-        console.log(stream)
-
-        userVideoEl.srcObject = stream
         this.localVideo = stream
+        this.setState((prevState) => ({
+          videoStreams: {
+            ...prevState.videoStreams,
+            local: stream,
+          },
+        }))
 
         // Clone stream for sending to peers
         this.peerStream = this.localVideo.clone()
@@ -174,17 +230,20 @@ export default class Room extends React.Component {
     this.socket.emit("add-song", data)
   }
 
-  toggleMute = (id) => {
-    const el = this.peerVids[id]
-    el.muted = !el.muted
-  }
+  rerenderVids = () => {}
 
   render = () => {
+    const singer = this.getCurrentSinger()
+    let peers = Object.values(this.state.peers).concat([this.buildLocalPeer()])
+
+    peers = singer ? _.filter(peers, (p) => p.id !== singer.id) : peers
+
     return (
       <RoomLayout
         stopVideo={this.stopStream}
         startVideo={this.shareStream}
-        peers={Object.values(this.state.peers)}
+        peers={peers}
+        currentSinger={singer}
       >
         {/* These Children will render inside of the Youtube Box, upper left */}
         <SongList
