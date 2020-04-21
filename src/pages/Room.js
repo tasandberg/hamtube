@@ -5,6 +5,7 @@ import _ from "lodash"
 import RoomLayout from "../components/RoomLayout"
 import SongList from "../components/SongInput"
 import NotificationBar from "../components/NotificationBar"
+import VideoPlayer from "../components/VideoPlayer"
 
 const vidOptions = {
   video: {
@@ -233,6 +234,12 @@ export default class Room extends React.Component {
   rerenderVids = () => {}
 
   render = () => {
+    const {
+      currentSong,
+      notification,
+      songInputNotification,
+      songListOpen,
+    } = this.state
     const singer = this.getCurrentSinger()
     let peers = Object.values(this.state.peers).concat([this.buildLocalPeer()])
 
@@ -246,14 +253,15 @@ export default class Room extends React.Component {
         currentSinger={singer}
       >
         {/* These Children will render inside of the Youtube Box, upper left */}
+        {currentSong ? <VideoPlayer resource={currentSong.videoData} /> : null}
         <SongList
-          isActive={this.state.songListOpen}
+          isActive={songListOpen}
           activate={this.openSongList}
           close={this.closeSongList}
           addSong={this.addSong}
-          songInputNotification={this.state.songInputNotification}
+          songInputNotification={songInputNotification}
         />
-        <NotificationBar notification={this.state.notification} />
+        <NotificationBar notification={notification} />
       </RoomLayout>
     )
   }

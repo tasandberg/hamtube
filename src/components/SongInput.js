@@ -19,6 +19,7 @@ export default ({
   }
 
   const onBlur = ({ currentTarget }) => {
+    // TODO Fix this to allow clicking on preview to add
     setTimeout(() => {
       if (!currentTarget.contains(document.activeElement)) {
         closeInput()
@@ -68,71 +69,76 @@ export default ({
 
   return (
     <div className="song-input-wrapper">
-      <div
-        className={classNames("input-wrapper", { active: isActive })}
-        onBlur={onBlur}
-      >
-        <div className="input-container" onClick={activate}>
-          <i className="fas fa-music" />
-          <input
-            focusable={isActive}
-            className="input"
-            type="text"
-            value={inputValue}
-            onFocus={onFocus}
-            placeholder={placeholder}
-            onKeyDown={keyDownHandler}
-            onChange={onInputChange}
-          />
-        </div>
+      <div className="song-input-wrapper-inner">
+        <div
+          className={classNames("input-wrapper", { active: isActive })}
+          onBlur={onBlur}
+        >
+          <div className="input-container" onClick={activate}>
+            <i className="fas fa-music" />
+            <input
+              focusable={isActive}
+              className="input"
+              type="text"
+              value={inputValue}
+              onFocus={onFocus}
+              placeholder={placeholder}
+              onKeyDown={keyDownHandler}
+              onChange={onInputChange}
+            />
+          </div>
 
-        {inputValue !== "" && isActive ? (
-          <Fragment>
-            <hr style={{ margin: "0 auto", width: "95%" }} />
-            <div className="add-song-feedback">
-              {linkPreview ? (
-                <article
-                  className="media"
-                  key={`${linkPreview.title}-preview`}
-                  style={{ paddingBottom: "1rem" }}
-                >
-                  <figure className="media-left">
-                    <p className="image is-96x96">
-                      <img
-                        alt="video preview"
-                        src={linkPreview.thumbnail_url}
-                      />
-                    </p>
-                  </figure>
-                  <div className="media-content">
-                    <div className="content">
-                      <b>{linkPreview.title}</b>
-                      <br />
-                      {linkPreview ? (
-                        <span className="is-size-7">press [enter] to add</span>
-                      ) : null}
+          {inputValue !== "" && isActive ? (
+            <Fragment>
+              <hr style={{ margin: "0 auto", width: "95%" }} />
+              <div className="add-song-feedback">
+                {linkPreview ? (
+                  <article
+                    className="media"
+                    key={`${linkPreview.title}-preview`}
+                    style={{ paddingBottom: "1rem" }}
+                    onClick={() => console.log("weeee clicked")}
+                  >
+                    <figure className="media-left">
+                      <p className="image is-96x96">
+                        <img
+                          alt="video preview"
+                          src={linkPreview.thumbnail_url}
+                        />
+                      </p>
+                    </figure>
+                    <div className="media-content">
+                      <div className="content">
+                        <b>{linkPreview.title}</b>
+                        <br />
+                        {linkPreview ? (
+                          <span className="is-size-7">
+                            press [enter] to add
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
-                  </div>
-                </article>
-              ) : (
-                <span>
-                  <span role="img" aria-label="ogre icon">
-                    👹
-                  </span>{" "}
-                  Can't find this video. Try adding a different one.
-                </span>
-              )}
+                  </article>
+                ) : (
+                  <span>
+                    <span role="img" aria-label="ogre icon">
+                      👹
+                    </span>{" "}
+                    Can't find this video. Try adding a different one.
+                  </span>
+                )}
+              </div>
+            </Fragment>
+          ) : null}
+        </div>
+        {songInputNotification ? (
+          <div className="song-input-notification-wrapper fadeInOut">
+            <div className="song-input-notification">
+              <span className="fadeInOut">{songInputNotification}</span>
             </div>
-          </Fragment>
+          </div>
         ) : null}
       </div>
-      {songInputNotification ? (
-        <div className="song-input-notification-wrapper fadeInOut">
-          <div className="song-input-notification">
-            <span className="fadeInOut">{songInputNotification}</span>
-          </div>
-        </div>
-      ) : null}
     </div>
   )
 }

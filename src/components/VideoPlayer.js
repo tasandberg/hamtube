@@ -33,10 +33,10 @@ class VideoPlayer extends React.Component {
   }
 
   stateChange = (e) => {
-    const { target, data } = e
-    this.player = target
-    this.updateProgress()
-    if (data === STATE_PLAYING) this.setPlaying()
+    // const { target, data } = e
+    // this.player = target
+    // this.updateProgress()
+    // if (data === STATE_PLAYING) this.setPlaying()
   }
 
   render() {

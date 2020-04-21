@@ -1,20 +1,4 @@
 import React from "react"
-import KtvDashboard from "../pages/KtvDashboard"
-
-const colors = [
-  "has-background-primary",
-  "has-background-info",
-  "has-background-warning",
-  "has-background-danger",
-  "has-background-success",
-  // "has-background-primary",
-  // "has-background-link",
-  // "has-background-light",
-  // "has-background-grey-light",
-  // "has-background-primary",
-  // "has-background-danger",
-  // "has-background-success",
-]
 
 const VideoBox = ({ id, muted }) => (
   <div className={`video-box`}>
@@ -49,7 +33,7 @@ export default ({ children, peers, currentSinger }) => {
   return (
     <div className="video-container has-background-dark">
       <div className="karaoke-container">
-        <KtvDashboard>{children}</KtvDashboard>
+        <div className="youtube-container">{children}</div>
         {currentSinger ? (
           <VideoBox
             key={currentSinger.id}
