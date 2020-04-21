@@ -70,6 +70,7 @@ module.exports = function (server) {
         Object.keys(io.sockets.connected).length,
         "clients connected to room " + roomId
       )
+
       io.to(roomId).emit("destroy", socket.id)
     })
 

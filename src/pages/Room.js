@@ -38,7 +38,7 @@ export default class Room extends React.Component {
     const socket = io("/", { query: `room=${this.roomId}` })
     this.socket = socket
 
-    // this.startLocalVideo()
+    this.startLocalVideo()
 
     socket.on("connect", () => {
       console.log("Connected to signalling server, Peer ID: %s", socket.id)
@@ -105,6 +105,9 @@ export default class Room extends React.Component {
       .then((stream) => {
         console.log("Local Video Obtained")
         const userVideoEl = document.getElementById("local-video")
+        console.log(userVideoEl)
+        console.log(stream)
+
         userVideoEl.srcObject = stream
         this.localVideo = stream
 
@@ -179,10 +182,8 @@ export default class Room extends React.Component {
   render = () => {
     return (
       <RoomLayout
-        userStream={this.localVideo}
         stopVideo={this.stopStream}
         startVideo={this.shareStream}
-        videoEnabled={this.state.videoEnabled}
         peers={Object.values(this.state.peers)}
       >
         {/* These Children will render inside of the Youtube Box, upper left */}

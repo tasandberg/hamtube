@@ -20,7 +20,7 @@ const VideoBox = ({ id, muted }) => (
   <div className={`video-box`}>
     <div className="video-box-inner">
       <div className="video-box-video">
-        <video autoPlay muted={muted} playsInline id={id}>
+        <video autoPlay={true} muted={muted} playsInline={true} id={id}>
           asdfasdf
         </video>
       </div>
@@ -45,14 +45,29 @@ const EmptyBox = () => (
   </div>
 )
 
-export default ({ children, peers }) => {
+export default ({ children, peers, currentSinger }) => {
   return (
     <div className="video-container has-background-dark">
       <div className="karaoke-container">
         <KtvDashboard>{children}</KtvDashboard>
-        <VideoBox key={"local-video-1"} id="local-video" muted={false} />
+        {currentSinger ? (
+          <VideoBox
+            key={currentSinger.id}
+            id={`${currentSinger.id}-video`}
+            muted={currentSinger.muted}
+          />
+        ) : (
+          <div className="empty-current-singer has-text-white">
+            <i
+              className="fas fa-microphone fa-4x "
+              style={{ marginBottom: "1rem" }}
+            />
+            <h3 className="title has-text-white">Add a song to get started</h3>
+          </div>
+        )}
       </div>
       <div className="video-grid">
+        <VideoBox id="local-video" muted={true} />
         {peers.length > 0 ? (
           peers.map((peer) => (
             <VideoBox
