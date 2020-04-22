@@ -1,5 +1,4 @@
 import React from "react"
-import io from "socket.io-client"
 import _ from "lodash"
 import RoomLayout from "../components/RoomLayout"
 import SongList from "../components/SongInput"
@@ -32,10 +31,18 @@ export default class Room extends React.Component {
       songInputNotification: "",
       currentSinger: null,
       currentSong: {},
+      videoPosition: 0,
       upNext: null,
       videoStreams: {},
       videoState: null,
     }
+  }
+
+  componentDidMount() {
+    console.log("Initializing client")
+    attachClientSocket(this)
+
+    // this.startLocalVideo()
   }
 
   componentDidUpdate(prevProps, prevState, snapshot) {
@@ -57,11 +64,6 @@ export default class Room extends React.Component {
       const el = document.getElementById(`${id}-video`)
       if (el) el.srcObject = stream
     })
-  }
-
-  componentDidMount() {
-    console.log("Initializing client")
-    attachClientSocket(this)
   }
 
   // Build a peer-like object to pass along with peers to layout
@@ -164,13 +166,8 @@ export default class Room extends React.Component {
     this.socket.emit("add-song", data)
   }
 
-  broadcastVideoData = (videoCode) => {
-    this.socket.emit("video-sync", videoCode)
-
-    _.each(this.state.peers, (p, id) => {
-      const message = { TYPE: "video-sync", data: videoCode }
-      p.peer.send(JSON.stringify(message))
-    })
+  onEnd = () => {
+    this.socket.emit("song-ended")
   }
 
   render = () => {
@@ -181,7 +178,9 @@ export default class Room extends React.Component {
       songListOpen,
       upNext,
       videoState,
+      videoPosition,
     } = this.state
+
     const singer = this.getCurrentSinger()
     let peers = Object.values(this.state.peers).concat([this.buildLocalPeer()])
 
@@ -197,10 +196,14 @@ export default class Room extends React.Component {
         {/* These Children will render inside of the Youtube Box, upper left */}
         <VideoPlayer
           broadcast={this.broadcastVideoData}
+          ref={(videoPlayer) => this.videoPlayer}
           videoState={videoState}
           isLocalUser={singer && singer.id === "local"}
           setCurrentTime={this.setCurrentTime}
           videoData={currentSong["videoData"]}
+          videoPosition={videoPosition}
+          onEnd={this.onEnd}
+          broadcastReady={() => this.socket.emit("player-ready")}
         />
         <SongList
           isActive={songListOpen}

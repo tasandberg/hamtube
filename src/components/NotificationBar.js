@@ -8,7 +8,7 @@ export default ({ notification, upNext }) => (
       </div>
     ) : (
       <div className="notification-bar">
-        <span>{upNext}</span>
+        {upNext ? <span>Up next: {upNext.videoData.title}</span> : null}
       </div>
     )}
   </div>

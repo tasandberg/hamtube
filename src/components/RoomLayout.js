@@ -5,7 +5,7 @@ const VideoBox = ({ id, muted }) => (
     <div className="video-box-inner">
       <div className="video-box-video">
         <video autoPlay={true} muted={muted} playsInline={true} id={id}>
-          asdfasdf
+          <span className="has-text-white">Client {id}</span>
         </video>
       </div>
     </div>
@@ -29,7 +29,7 @@ const EmptyBox = () => (
   </div>
 )
 
-export default ({ children, peers, currentSinger }) => {
+const RoomLayout = ({ children, peers, currentSinger }) => {
   return (
     <div className="video-container has-background-dark">
       <div className="karaoke-container">
@@ -66,3 +66,5 @@ export default ({ children, peers, currentSinger }) => {
     </div>
   )
 }
+
+export default RoomLayout

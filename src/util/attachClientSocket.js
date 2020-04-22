@@ -1,6 +1,15 @@
 import initializePeer from "./peer"
 import io from "socket.io-client"
 
+const PlayerState = {
+  UNSTARTED: -1,
+  ENDED: 0,
+  PLAYING: 1,
+  PAUSED: 2,
+  BUFFERING: 3,
+  CUED: 5,
+}
+
 export default function (parent) {
   const socket = io("/", { query: `room=${parent.roomId}` })
   parent.socket = socket
@@ -31,9 +40,13 @@ export default function (parent) {
     })
 
     socket.on("room-data", (data) => {
+      console.log(data, "room-data")
+      const { currentSinger, currentSong, position, upNext } = data
       parent.setState({
-        currentSong: data.nowPlaying.videoData,
-        currentSinger: data.nowPlaying.singerId,
+        currentSinger: currentSinger,
+        currentSong: currentSong || {},
+        upNext: upNext,
+        videoPosition: position || 0,
       })
     })
 
@@ -72,8 +85,24 @@ export default function (parent) {
       }, 3000)
     })
 
+    socket.on("video-control", (code) => {
+      console.log("video-control", code)
+
+      parent.setState({
+        videoState: code,
+      })
+    })
+
+    socket.on("video-position", (data) => {
+      parent.setState({
+        videoPosition: data,
+      })
+    })
+
     socket.on("new-song", ({ currentSong, currentSinger, upNext }) => {
-      console.log(arguments, "new-song")
+      console.log(upNext, "up next")
+      console.log(currentSinger, "currentSinger")
+      console.log(currentSong, "currentSong")
 
       parent.setState({
         currentSong,
