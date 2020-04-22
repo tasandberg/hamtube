@@ -1,11 +1,15 @@
 import React from "react"
 
-export default ({ notification }) => (
+export default ({ notification, upNext }) => (
   <div className="notification-bar-wrapper">
     {notification ? (
       <div className="notification-bar fadeInOut">
         <span>{notification}</span>
       </div>
-    ) : null}
+    ) : (
+      <div className="notification-bar">
+        <span>{upNext}</span>
+      </div>
+    )}
   </div>
 )

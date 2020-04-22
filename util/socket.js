@@ -2,6 +2,14 @@
 
 const getNumberWithOrdinal = require("./numberHelper")
 const _ = require("lodash")
+const PlayerState = {
+  UNSTARTED: -1,
+  ENDED: 0,
+  PLAYING: 1,
+  PAUSED: 2,
+  BUFFERING: 3,
+  CUED: 5,
+}
 
 /**
  * Dictionary of songQueues by RoomID
@@ -11,6 +19,8 @@ const _ = require("lodash")
  *  ]
  */
 const songQueues = {}
+const nowPlaying = {}
+const videoPosition = {}
 
 function initializeSongQueue(roomId) {
   if (songQueues[roomId]) return
@@ -52,6 +62,12 @@ module.exports = function (server) {
         peerId: socket2.id,
         initiator: false,
       })
+
+      io.to(socket.id).emit("room-data", {
+        upNext: songQueues[roomId][0],
+        nowPlaying: nowPlaying[roomId],
+        position: videoPosition[roomId],
+      })
     })
 
     /**
@@ -65,13 +81,21 @@ module.exports = function (server) {
     /**
      * Song Queue Functions
      */
-
     const addToSongQueue = (videoData) => {
       songQueues[roomId].push({ singerId: socket.id, videoData })
     }
 
+    const setNowPlaying = (videoData) => {
+      console.log("Setting now playing")
+
+      nowPlaying[roomId] = videoData
+    }
+
     const cycleSong = () => {
+      console.log("Cycling songs")
+
       const currentSong = songQueues[roomId].shift()
+      setNowPlaying(currentSong)
       const upNext = songQueues[roomId][0]
 
       io.to(roomId).emit("new-song", {
@@ -84,7 +108,6 @@ module.exports = function (server) {
     }
 
     // Event Handlers
-
     socket.on("disconnect", function (peerId) {
       console.log("Disconnecting ", socket.id)
       console.log(
@@ -97,6 +120,28 @@ module.exports = function (server) {
 
     socket.on("disconnect-video", function () {
       socket.to(roomId).emit("disconnect-video", socket.id)
+    })
+
+    socket.on("video-sync", (data) => {
+      switch (data) {
+        case PlayerState.PLAYING:
+          console.log("video playing")
+          break
+        case PlayerState.BUFFERING:
+          console.log("video buffering")
+          break
+        case PlayerState.ENDED:
+          console.log("video ended")
+          break
+        default:
+          console.log(data, "video-sync")
+          break
+      }
+    })
+
+    socket.on("video-position", (data) => {
+      console.log(data, "video-position")
+      videoPosition[roomId] = data
     })
 
     socket.on("signal", function (data) {
@@ -114,6 +159,7 @@ module.exports = function (server) {
     socket.on("add-song", (data) => {
       addToSongQueue(data)
       const queueLength = songQueues[roomId].length
+
       console.log(`Song added for room ${roomId}. ${queueLength} total.`)
 
       // Send event to all except user who added song
@@ -129,9 +175,7 @@ module.exports = function (server) {
         )} in line. 🔥`,
       })
 
-      if (queueLength === 1) {
-        console.log("No songs")
-
+      if (!nowPlaying[roomId]) {
         cycleSong()
       }
     })

@@ -34,6 +34,7 @@ export default class Room extends React.Component {
       currentSong: null,
       upNext: null,
       videoStreams: {},
+      videoState: null,
     }
   }
 
@@ -86,6 +87,12 @@ export default class Room extends React.Component {
             },
           },
         }))
+      })
+
+      socket.on("room-data", (data) => {
+        this.setState({
+          currentSong: data.nowPlaying,
+        })
       })
 
       socket.on("destroy", (id) => {
@@ -227,11 +234,22 @@ export default class Room extends React.Component {
     this.setState({ songListOpen: false })
   }
 
+  setCurrentTime = (position) => {
+    this.socket.emit("video-position", position)
+  }
+
   addSong = (data) => {
     this.socket.emit("add-song", data)
   }
 
-  rerenderVids = () => {}
+  broadcastVideoData = (videoCode) => {
+    this.socket.emit("video-sync", videoCode)
+
+    _.each(this.state.peers, (p, id) => {
+      const message = { TYPE: "video-sync", data: videoCode }
+      p.peer.send(JSON.stringify(message))
+    })
+  }
 
   render = () => {
     const {
@@ -239,6 +257,8 @@ export default class Room extends React.Component {
       notification,
       songInputNotification,
       songListOpen,
+      upNext,
+      videoState,
     } = this.state
     const singer = this.getCurrentSinger()
     let peers = Object.values(this.state.peers).concat([this.buildLocalPeer()])
@@ -253,7 +273,13 @@ export default class Room extends React.Component {
         currentSinger={singer}
       >
         {/* These Children will render inside of the Youtube Box, upper left */}
-        {currentSong ? <VideoPlayer resource={currentSong.videoData} /> : null}
+        <VideoPlayer
+          broadcast={this.broadcastVideoData}
+          videoState={videoState}
+          isLocalUser={singer && singer.id === "local"}
+          setCurrentTime={this.setCurrentTime}
+          resource={currentSong}
+        />
         <SongList
           isActive={songListOpen}
           activate={this.openSongList}
@@ -261,7 +287,7 @@ export default class Room extends React.Component {
           addSong={this.addSong}
           songInputNotification={songInputNotification}
         />
-        <NotificationBar notification={notification} />
+        <NotificationBar upNext={upNext} notification={notification} />
       </RoomLayout>
     )
   }

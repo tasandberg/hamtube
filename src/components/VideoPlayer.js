@@ -3,8 +3,6 @@ import YouTube from "react-youtube"
 import { extractVideoId } from "../util/youtube-data"
 import classNames from "classnames"
 
-const STATE_PLAYING = 1
-
 class VideoPlayer extends React.Component {
   constructor(props) {
     super(props)
@@ -12,6 +10,18 @@ class VideoPlayer extends React.Component {
     this.state = {
       isPlaying: false,
       progress: 0,
+    }
+  }
+
+  componentDidUpdate(prevProps, prevState, snapshot) {
+    const oldVideoState = prevProps.videoState
+    const videoState = this.props.videoState
+
+    if (this.props.videoState !== oldVideoState && !this.props.isLocalUser) {
+      console.log("video state change", videoState)
+      if (videoState === YouTube.PlayerState.PLAYING) {
+        this.player.playVideo()
+      }
     }
   }
 
@@ -24,6 +34,7 @@ class VideoPlayer extends React.Component {
   updateProgress() {
     const currentTime = this.player.getCurrentTime()
     const duration = this.player.getDuration()
+    this.props.setCurrentTime(currentTime)
     this.setState({
       progress: (currentTime / duration) * 100,
     })
@@ -33,15 +44,26 @@ class VideoPlayer extends React.Component {
   }
 
   stateChange = (e) => {
-    // const { target, data } = e
-    // this.player = target
-    // this.updateProgress()
-    // if (data === STATE_PLAYING) this.setPlaying()
+    const { data } = e
+
+    this.updateProgress()
+    if (data === YouTube.PlayerState.PLAYING) this.setPlaying()
+
+    if (this.props.isLocalUser) {
+      this.props.broadcast(data)
+    }
   }
 
-  render() {
-    const { resource } = this.props
-    const videoId = extractVideoId(resource.url)
+  onReady = (e) => {
+    console.log("video player ready")
+    this.player = e.target
+    if (this.props.isLocalUser) {
+      setTimeout(() => e.target.playVideo(), 2000)
+    }
+  }
+
+  renderVideoPlayer(resource, isLocalUser) {
+    const { videoData } = resource
 
     return (
       <div className="video-container">
@@ -52,42 +74,42 @@ class VideoPlayer extends React.Component {
         >
           <div className="loading-text has-text-white">
             <center>
-              <h1 className="title is-1 has-text-white">{resource.title}</h1>
+              <h1 className="title is-1 has-text-white">{videoData.title}</h1>
               <span className="subtitle has-text-white">Get ready!</span>
             </center>
           </div>
         </div>
         <YouTube
-          videoId={videoId}
+          videoId={extractVideoId(videoData.url)}
+          ref={(youtube) => (this.youtube = youtube)}
           containerClassName="video-player"
           onStateChange={this.stateChange}
           onEnd={this.props.onEnd}
-          muted={true}
           opts={{
-            url: resource.url,
+            url: videoData.url,
             playerVars: {
               controls: 0,
               modestbranding: 1,
               showinfo: 0,
-              isMuted: true,
+              mute: isLocalUser ? 0 : 1,
+              autoplay: 0,
+              disablekb: 1,
             },
             width: "100%",
             height: "100%",
           }}
-          onReady={(e) => {
-            console.log("video player ready")
-            setTimeout(() => {
-              e.target.playVideo()
-            }, 2000)
-          }}
+          onReady={this.onReady}
         />
-        <br />
-        <progress
-          className="progress is-primary"
-          value={this.state.progress}
-          max="100"
-        ></progress>
       </div>
+    )
+  }
+
+  render() {
+    const { resource, isLocalUser } = this.props
+    return resource ? (
+      this.renderVideoPlayer(resource, isLocalUser)
+    ) : (
+      <span>womp womp</span>
     )
   }
 }

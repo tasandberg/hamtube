@@ -2,7 +2,6 @@ import Peer from "simple-peer"
 
 export default function (chatComponent, socket, data) {
   const peerId = data.peerId
-  const socketId = socket.id
 
   const peer = new Peer({
     initiator: data.initiator,
@@ -73,8 +72,21 @@ export default function (chatComponent, socket, data) {
     }))
   })
 
+  function videoSync(data) {
+    chatComponent.setState({
+      videoState: data,
+    })
+  }
+
   peer.on("data", (data) => {
-    console.log(data)
+    const payload = JSON.parse(data)
+    switch (payload.TYPE) {
+      case "video-sync":
+        videoSync(payload.data)
+        break
+      default:
+        break
+    }
   })
 
   peer.on("destroy", () => {
