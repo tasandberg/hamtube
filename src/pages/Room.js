@@ -42,7 +42,7 @@ export default class Room extends React.Component {
     console.log("Initializing client")
     attachClientSocket(this)
 
-    // this.startLocalVideo()
+    this.startLocalVideo()
   }
 
   componentDidUpdate(prevProps, prevState, snapshot) {

@@ -1,20 +1,5 @@
 import React from "react"
 
-const colors = [
-  "has-background-primary",
-  "has-background-info",
-  "has-background-warning",
-  "has-background-danger",
-  "has-background-success",
-  // "has-background-primary",
-  // "has-background-link",
-  // "has-background-light",
-  // "has-background-grey-light",
-  // "has-background-primary",
-  // "has-background-danger",
-  // "has-background-success",
-]
-
 const VideoBox = ({ id, muted, styleWidth }) => (
   <div className="video-grid-tile">
     <video autoPlay muted={muted} playsInline id={id}>

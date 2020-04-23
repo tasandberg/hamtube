@@ -2,6 +2,10 @@
   "name": "hamtube",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "12.16.1",
+    "yarn": "*"
+  },
   "dependencies": {
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.3.2",
@@ -14,6 +18,7 @@
     "express-subdomain": "^1.0.5",
     "immutable": "^4.0.0-rc.12",
     "lodash": "^4.17.15",
+    "morgan": "^1.10.0",
     "node-sass": "^4.13.1",
     "pg": "^8.0.2",
     "pg-hstore": "^2.3.3",
