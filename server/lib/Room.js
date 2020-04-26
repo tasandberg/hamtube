@@ -9,86 +9,69 @@
  */
 
 export default class Room {
-  constructor({ id }) {
-    this.id = id
-    this.songQueue = []
-    this.nowPlaying = null
-    this.videoPosition = 0
-    this.users = []
+  constructor({ id, io }) {
+    this.id = id;
+    this.io = io;
+    this.songQueue = [];
+    this.nowPlaying = null;
+    this.videoPosition = 0;
+    this.users = [];
+    this.awaitingClients = null;
   }
 
-  //
   addToSongQueue = (videoData, userId, cb) => {
     songQueue.push({
       singerId: userId,
       videoData,
-    })
-    cb(songQueue.length)
-    const queueLength = songQueues[roomId].length
+    });
 
-    console.log(`Song added for room ${roomId}. ${queueLength} total.`)
+    console.log(
+      `Song added for room ${roomId}. ${this.songQueue.length} total.`
+    );
 
-    // Send event to all except user who added song
-    notifyRoom(
-      `A new song was just added to the queue 👻 (${queueLength} total)`,
-      true
-    )
-
-    // Send success feedback to user
-    io.to(socket.id).emit("song-added-success", {
-      message: `Song added. It's ${getNumberWithOrdinal(
-        songQueues[roomId].length
-      )} in line. 🔥`,
-    })
+    cb(this);
 
     if (!nowPlaying[roomId]) {
-      cycleSong()
+      cycleSong();
     }
+  };
 
-    broadcastRoomData()
-  }
+  roomData = () => ({
+    currentSong: this.nowPlaying,
+    currentSinger: currentSong ? currentSong.singerId : null,
+    upNext: this.songQueue[0],
+    position: this.videoPosition,
+  });
+
   songIsPlaying = () => {
-    return nowPlaying[roomId]
-  }
-
-  setNowPlaying = (videoData) => {
-    console.log("Setting now playing")
-    nowPlaying[roomId] = videoData
-  }
-
-  getSongQueue = () => {
-    return songQueues[roomId]
-  }
+    return !!this.nowPlaying;
+  };
 
   getUpNext = () => {
-    return getSongQueue()[0]
-  }
-
-  getNowPlaying = () => {
-    return nowPlaying[roomId]
-  }
+    return getSongQueue()[0];
+  };
 
   // Remove and return song at top of queue
   advanceQueue = () => {
-    setNowPlaying(songQueues[roomId].shift())
-    return getNowPlaying()
-  }
+    this.videoPosition = 0;
+    this.nowPlaying = this.songQueue.shift();
+    return this.nowPlaying;
+  };
 
   refreshAwaitingClients = () => {
-    awaitingClients[roomId] = peers[roomId].map((socket) => socket.id)
-  }
+    this.awaitingClients = this.users.map((socket) => socket.id);
+  };
 
   cycleSong = () => {
-    console.log("Cycling songs")
-    videoPosition[roomId] = 0
-    const currentSong = advanceQueue()
+    console.log("Cycling songs");
+    const currentSong = advanceQueue();
 
     if (currentSong) {
-      notifyRoom(`Now playing: ${currentSong.videoData.title}`)
-      refreshAwaitingClients()
+      notifyRoom(`Now playing: ${currentSong.videoData.title}`);
+      refreshAwaitingClients();
     } else {
-      console.log("No more songs")
+      console.log("No more songs");
     }
-    broadcastRoomData()
-  }
+    broadcastRoomData();
+  };
 }
