@@ -1,3 +1,6 @@
+const util = require("util")
+const EventEmitter = require("events").EventEmitter
+
 /**
  * Room Class:
  * Attributes:
@@ -6,12 +9,26 @@
  * * videoPosition
  * * users <Socket
  *
+ * API:
+ * * Add song
+ * * Play (todo: auto play for now)
+ * * Stop (todo)
+ *
+ * Events:
+ * * 'now-playing': new song has been moved to playing position (room data)
+ * * 'song-added': new song added to queue (room data)
+ * * 'empty-queue': no more songs left in queue (room data)
+ *
  */
+export const KARAOKE_EVENTS = {
+  SONG_ADDED: "song-added",
+  NOW_PLAYING: "now-playing",
+  EMPTY_QUEUE: "empty-queue",
+}
 
-export default class Room {
-  constructor({ id, io }) {
+class KaraokeRoom {
+  constructor({ id }) {
     this.id = id
-    this.io = io
     this.songQueue = []
     this.nowPlaying = null
     this.videoPosition = 0
@@ -25,9 +42,17 @@ export default class Room {
       videoData,
     })
 
-    if (cb) {
-      cb(this.roomData())
-    }
+    this.#emitMessage(
+      KARAOKE_EVENTS.SONG_ADDED,
+      `A new song was just added to the queue 👻 (${this.songQueue.length} total)`
+    )
+  }
+
+  #emitMessage = (eventKey, message) => {
+    this.emit(eventKey, {
+      message,
+      data: this.roomData(),
+    })
   }
 
   roomData = () => ({
@@ -57,19 +82,20 @@ export default class Room {
 
     if (currentSong) {
       this.refreshAwaitingClients()
-      cb &&
-        cb({
-          message: `Now playing: ${currentSong.videoData.title}`,
-          roomData: this.roomData(),
-        })
-      return true
+      this.#emitMessage(
+        KARAOKE_EVENTS.NOW_PLAYING,
+        `Now playing: ${currentSong.videoData.title}`
+      )
     } else {
-      cb &&
-        cb({
-          message: `No songs left in Queue. Add more!`,
-          roomData: this.roomData(),
-        })
+      this.#emitMessage(
+        KARAOKE_EVENTS.EMPTY_QUEUE,
+        `Song Queue is empty. Add more!`
+      )
       return false
     }
   }
 }
+
+util.inherits(KaraokeRoom, EventEmitter)
+
+export default KaraokeRoom
