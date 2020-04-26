@@ -37,8 +37,8 @@
   },
   "scripts": {
     "client-dev": "react-scripts start",
-    "server-dev": "nodemon server.js",
-    "start": "node server.js",
+    "server-dev": "nodemon server/server.js",
+    "start": "node server/server.js",
     "dev": "./bin/startup.sh",
     "heroku-postbuild": "yarn build",
     "build": "react-scripts build",
