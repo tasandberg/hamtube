@@ -46,6 +46,17 @@ describe("init", () => {
   })
 })
 
+describe("addUser", () => {
+  it("requires an instance of socket", () => {
+    expect(() => newRoom.addUser("wow")).toThrow(
+      "karaokeRoom.addUser requires an instance of Socket"
+    )
+  })
+})
+
+/**
+ * addToSongQueue
+ */
 describe("addToSongQueue", () => {
   it("adds song to queue with proper format", () => {
     addSongs()
@@ -81,14 +92,6 @@ describe("addToSongQueue", () => {
   })
 })
 
-/**
- * Cycling song
- * - Changes now playing
- *  - Sets position to 0
- *  - Null to <song>
- *  - If end of list, <song> to null
- * - Calls callback with self
- */
 describe("cycleSong", () => {
   it("calls advanceQueue", () => {
     newRoom.advanceQueue = mockFunction

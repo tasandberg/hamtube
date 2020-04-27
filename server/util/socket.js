@@ -1,15 +1,7 @@
-// const youtubedl = require("youtube-dl")
-
+const PLAYER_STATES = require("../lib/playerStates")
 const getNumberWithOrdinal = require("./numberHelper")
+const { KaraokeRoom, KARAOKE_EVENTS } = require("../lib/KaraokeRoom")
 const _ = require("lodash")
-const PlayerState = {
-  UNSTARTED: -1,
-  ENDED: 0,
-  PLAYING: 1,
-  PAUSED: 2,
-  BUFFERING: 3,
-  CUED: 5,
-}
 
 /**
  * Dictionary of songQueues by RoomID
@@ -18,22 +10,11 @@ const PlayerState = {
  *    { singerId: socketId, videoData: videoData}
  *  ]
  */
-const songQueues = {}
-const nowPlaying = {}
+const karaokeRooms = {}
 
-// Position of video from singer's client, for syncing newcomers to room
-const videoPosition = {}
-
-const peers = {}
-const awaitingClients = {}
-
-function initializeSongQueue(roomId) {
-  if (songQueues[roomId]) return
-  songQueues[roomId] = []
-}
-
-function addToSongQueue(roomId, videoData, singerId) {
-  songQueues[roomId].push({ singerId, videoData })
+const initializeRoom = (roomId) => {
+  karaokeRooms[roomId] = karaokeRooms[roomId] || new KaraokeRoom(roomId)
+  return karaokeRooms[roomId]
 }
 
 module.exports = function (server) {
@@ -42,12 +23,11 @@ module.exports = function (server) {
 
   const onConnection = (socket) => {
     const roomId = socket.handshake.query.room
-    const peerList = (peers[roomId] = peers[roomId] || [])
+    const room = initializeRoom(roomId)
 
-    peerList.push(socket)
+    room.addUser(socket)
 
     socket.join(roomId)
-    initializeSongQueue(roomId)
 
     console.log("Connection to room %s with ID: %s", roomId, socket.id)
 
@@ -55,8 +35,8 @@ module.exports = function (server) {
      * General Use Room Functions
      */
     const notifyRoom = (message, excludeUser = false) => {
-      let notifier = excludeUser ? socket.to(roomId) : io.to(roomId)
-      notifier.emit("notification", {
+      let emitter = excludeUser ? socket.to(roomId) : io.to(roomId)
+      emitter.emit("notification", {
         message,
       })
     }
@@ -64,148 +44,35 @@ module.exports = function (server) {
     /**
      * Song Queue Functions
      */
-    const addToSongQueue = (videoData) => {
-      songQueues[roomId].push({
-        singerId: socket.id,
-        videoData,
-      })
-      const queueLength = songQueues[roomId].length
-
-      console.log(`Song added for room ${roomId}. ${queueLength} total.`)
-
-      // Send event to all except user who added song
-      notifyRoom(
-        `A new song was just added to the queue 👻 (${queueLength} total)`,
-        true
-      )
-
-      // Send success feedback to user
-      io.to(socket.id).emit("song-added-success", {
-        message: `Song added. It's ${getNumberWithOrdinal(
-          songQueues[roomId].length
-        )} in line. 🔥`,
-      })
-
-      if (!nowPlaying[roomId]) {
-        cycleSong()
-      }
-
-      broadcastRoomData()
-    }
-
     const broadcastRoomData = (socketId) => {
-      const currentSong = getNowPlaying()
-
       const emitter = socketId ? io.to(socketId) : io.to(roomId)
-
-      emitter.emit("room-data", {
-        currentSong,
-        currentSinger: currentSong && currentSong.singerId,
-        upNext: getUpNext(),
-        position: videoPosition[roomId],
-      })
+      emitter.emit("room-data", room.roomData())
     }
 
-    const songIsPlaying = () => {
-      return nowPlaying[roomId]
-    }
+    // NOW_PLAYING Handler
+    const onNowPlaying = ({ message, data }) => notifyRoom(message, data)
+    room.on(KARAOKE_EVENTS.NOW_PLAYING, onNowPlaying)
 
-    const setNowPlaying = (videoData) => {
-      console.log("Setting now playing")
-      nowPlaying[roomId] = videoData
-    }
-
-    const getSongQueue = () => {
-      return songQueues[roomId]
-    }
-
-    const getUpNext = () => {
-      return getSongQueue()[0]
-    }
-
-    const getNowPlaying = () => {
-      return nowPlaying[roomId]
-    }
-
-    // Remove and return song at top of queue
-    const advanceQueue = () => {
-      setNowPlaying(songQueues[roomId].shift())
-      return getNowPlaying()
-    }
-
-    const refreshAwaitingClients = () => {
-      awaitingClients[roomId] = peers[roomId].map((socket) => socket.id)
-    }
-
-    const cycleSong = () => {
-      console.log("Cycling songs")
-      videoPosition[roomId] = 0
-      const currentSong = advanceQueue()
-
-      if (currentSong) {
-        notifyRoom(`Now playing: ${currentSong.videoData.title}`)
-        refreshAwaitingClients()
-      } else {
-        console.log("No more songs")
-      }
-      broadcastRoomData()
-    }
-
+    // On Client Player Ready
     socket.on("player-ready", () => {
-      // Remove this user from awaiting clients
-
-      if (awaitingClients[roomId]) {
-        const filteredAwaiting = awaitingClients[roomId].filter(
-          (id) => id !== socket.id
-        )
-
-        awaitingClients[roomId] = filteredAwaiting
-        console.log(awaitingClients[roomId], "awaiting clients")
-
-        if (awaitingClients[roomId].length === 0) {
-          console.log("All clients loaded, playing video")
-
-          videoControl(PlayerState.PLAYING)
-        } else {
-          console.log("Waiting on %s clients", awaitingClients[roomId].length)
-        }
-      } else {
-        if (getNowPlaying()) {
-          broadcastRoomData(socket.id)
-          videoControl(PlayerState.PLAYING)
-        }
+      // If song is playing in room, tell client to play
+      if (room.songIsPlaying()) {
+        videoControl(PLAYER_STATES.PLAYING, socket)
+      }
+      // Otherwise, let room know client is ready
+      else {
+        room.updateAwaitingClients(socket)
       }
     })
 
-    const videoControl = (code) => {
-      io.to(roomId).emit("video-control", code)
+    const videoControl = (code, socket = null) => {
+      const emitter = socket ? socket : io.to(roomId)
+      emitter.emit("video-control", code)
     }
-
-    // Get Client Latency
-    // Call callback with results
-    // function pingClients(callback) {
-    //   const pings = []
-    //   const peerList = peers[roomId].map((p) => p)
-    //   console.log("Pinging %s peers", peerList.length)
-
-    //   peerList.forEach((sock) => {
-    //     const start = Date.now()
-
-    //     sock.emit("ping", "plz pong", (pong) => {
-    //       pings.push((Date.now() - start) / 2)
-
-    //       if (pings.length === peerList.length) {
-    //         callback(pings)
-    //       }
-    //     })
-    //   })
-    // }
 
     socket.on("disconnect", function () {
       console.log("Disconnecting ", socket.id)
-      const updatedPeers = peers[roomId].filter((s) => s.id !== socket.id)
-      peers[roomId] = updatedPeers
-
+      room.removeUser(socket)
       io.to(roomId).emit("destroy", socket.id)
     })
 
@@ -214,16 +81,38 @@ module.exports = function (server) {
     })
 
     socket.on("video-position", (data) => {
-      videoPosition[roomId] = data
+      room.videoPosition = data // Can we skip this?
       io.to(roomId).emit("video-position", data)
     })
 
     socket.on("song-ended", () => {
       console.log("Song ended, cycling queue...")
-      videoControl(PlayerState.ENDED)
-      cycleSong()
+      videoControl(PLAYER_STATES.ENDED)
+      room.cycleSong()
     })
 
+    socket.on("add-song", (data) => {
+      room.addToSongQueue(data, socket.id)
+    })
+
+    // Room Event Handlers
+    const onSongAdded = ({ message, data }) => {
+      // Send event to all except user who added song
+      notifyRoom(message, true)
+
+      // Send success feedback to user
+      const placeInLine = getNumberWithOrdinal(room.songQueue.length)
+      socket.emit("song-added-success", {
+        message: `Song added. It's ${placeInLine} in line. 🔥`,
+      })
+
+      io.to(roomId).emit("room-data", data)
+    }
+    room.on(KARAOKE_EVENTS.SONG_ADDED, onSongAdded)
+
+    /**
+     * WebRTC Signalling
+     */
     socket.on("signal", function (data) {
       var socket2 = io.sockets.connected[data.peerId]
       if (!socket2) {
@@ -234,10 +123,6 @@ module.exports = function (server) {
         signal: data.signal,
         peerId: socket.id,
       })
-    })
-
-    socket.on("add-song", (data) => {
-      addToSongQueue(data)
     })
 
     /**
@@ -263,7 +148,7 @@ module.exports = function (server) {
       })
     })
 
-    if (songIsPlaying()) {
+    if (room.songIsPlaying()) {
       console.log("Song is playing, sending room data to new user")
       broadcastRoomData(socket.id)
     }
