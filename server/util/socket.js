@@ -41,34 +41,33 @@ module.exports = function (server) {
       })
     }
 
-    /**
-     * Song Queue Functions
-     */
     const broadcastRoomData = (socketId) => {
       const emitter = socketId ? io.to(socketId) : io.to(roomId)
       emitter.emit("room-data", room.roomData())
+    }
+
+    const videoControl = (code, socket = null) => {
+      const emitter = socket ? socket : io.to(roomId)
+      emitter.emit("video-control", code)
     }
 
     // NOW_PLAYING Handler
     const onNowPlaying = ({ message, data }) => notifyRoom(message, data)
     room.on(KARAOKE_EVENTS.NOW_PLAYING, onNowPlaying)
 
-    // On Client Player Ready
+    /**
+     * On Client Player Ready:
+     * If song is playing in room, tell client to play.
+     * Otherwise, let room know client is ready.
+     *
+     */
     socket.on("player-ready", () => {
-      // If song is playing in room, tell client to play
-      if (room.songIsPlaying()) {
+      if (room.isSongPlaying()) {
         videoControl(PLAYER_STATES.PLAYING, socket)
-      }
-      // Otherwise, let room know client is ready
-      else {
+      } else {
         room.updateAwaitingClients(socket)
       }
     })
-
-    const videoControl = (code, socket = null) => {
-      const emitter = socket ? socket : io.to(roomId)
-      emitter.emit("video-control", code)
-    }
 
     socket.on("disconnect", function () {
       console.log("Disconnecting ", socket.id)
@@ -88,7 +87,7 @@ module.exports = function (server) {
     socket.on("song-ended", () => {
       console.log("Song ended, cycling queue...")
       videoControl(PLAYER_STATES.ENDED)
-      room.cycleSong()
+      room.endSong()
     })
 
     socket.on("add-song", (data) => {
@@ -148,7 +147,7 @@ module.exports = function (server) {
       })
     })
 
-    if (room.songIsPlaying()) {
+    if (room.isSongPlaying()) {
       console.log("Song is playing, sending room data to new user")
       broadcastRoomData(socket.id)
     }
