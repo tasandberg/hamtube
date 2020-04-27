@@ -54,6 +54,10 @@ describe("addUser", () => {
   })
 })
 
+describe('removeUser', () => {
+  it.todo('removes a user')
+})
+
 /**
  * addToSongQueue
  */

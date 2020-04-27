@@ -2,6 +2,7 @@ const PLAYER_STATES = require("../lib/playerStates")
 const getNumberWithOrdinal = require("./numberHelper")
 const { KaraokeRoom, KARAOKE_EVENTS } = require("../lib/KaraokeRoom")
 const _ = require("lodash")
+const debug = require('debug')('socket')
 
 /**
  * Dictionary of songQueues by RoomID
@@ -34,10 +35,10 @@ module.exports = function (server) {
     /**
      * General Use Room Functions
      */
-    const notifyRoom = (message, excludeUser = false) => {
-      let emitter = excludeUser ? socket.to(roomId) : io.to(roomId)
-      emitter.emit("notification", {
+    const notifyRoom = (message, data) => {
+      io.to(roomId).emit("notification", {
         message,
+        data
       })
     }
 
@@ -51,9 +52,34 @@ module.exports = function (server) {
       emitter.emit("video-control", code)
     }
 
-    // NOW_PLAYING Handler
-    const onNowPlaying = ({ message, data }) => notifyRoom(message, data)
-    room.on(KARAOKE_EVENTS.NOW_PLAYING, onNowPlaying)
+    /**
+     * Room Event Handlers
+     */
+
+    // SONG_ADDED
+    room.on(KARAOKE_EVENTS.SONG_ADDED, ({ message, data }) => {
+      // Send event to all except user who added song
+      notifyRoom(message, true)
+
+      // Send success feedback to user
+      const placeInLine = getNumberWithOrdinal(room.songQueue.length)
+      socket.emit("song-added-success", {
+        message: `Song added. It's ${placeInLine} in line. 🔥`,
+      })
+
+      io.to(roomId).emit("room-data", data)
+
+      if (room.nowPlaying === null) room.cycleSong()
+    })
+
+    // NOW_PLAYING
+    room.on(KARAOKE_EVENTS.NOW_PLAYING, ({ message, data }) => notifyRoom(message, data))
+
+    // CLIENTS_READY
+    room.on(KARAOKE_EVENTS.CLIENTS_READY, ({ message, data }) => {
+      debug('CLIENTS_READY, sending Play state')
+      videoControl(PLAYER_STATES.PLAYING)
+    })
 
     /**
      * On Client Player Ready:
@@ -63,8 +89,10 @@ module.exports = function (server) {
      */
     socket.on("player-ready", () => {
       if (room.isSongPlaying()) {
+        console.log('song playing, send play')
         videoControl(PLAYER_STATES.PLAYING, socket)
       } else {
+        console.log('Player ready, updating awaitingClients')
         room.updateAwaitingClients(socket)
       }
     })
@@ -93,21 +121,6 @@ module.exports = function (server) {
     socket.on("add-song", (data) => {
       room.addToSongQueue(data, socket.id)
     })
-
-    // Room Event Handlers
-    const onSongAdded = ({ message, data }) => {
-      // Send event to all except user who added song
-      notifyRoom(message, true)
-
-      // Send success feedback to user
-      const placeInLine = getNumberWithOrdinal(room.songQueue.length)
-      socket.emit("song-added-success", {
-        message: `Song added. It's ${placeInLine} in line. 🔥`,
-      })
-
-      io.to(roomId).emit("room-data", data)
-    }
-    room.on(KARAOKE_EVENTS.SONG_ADDED, onSongAdded)
 
     /**
      * WebRTC Signalling

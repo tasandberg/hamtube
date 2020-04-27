@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": "12.16.1",
+    "node": "14",
     "yarn": "*"
   },
   "dependencies": {
@@ -37,7 +37,7 @@
   },
   "scripts": {
     "client-dev": "react-scripts start",
-    "server-dev": "nodemon server/server.js",
+    "server-dev": "DEBUG=karaoke_room,socket nodemon server/server.js",
     "start": "node server/server.js",
     "dev": "./bin/startup.sh",
     "heroku-postbuild": "yarn build",

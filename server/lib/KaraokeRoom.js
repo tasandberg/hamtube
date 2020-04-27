@@ -1,7 +1,8 @@
-const util = require("util");
-const EventEmitter = require("events").EventEmitter;
-const Socket = require("socket.io/lib/socket");
-const PLAYER_STATES = require("../lib/playerStates");
+const util = require("util")
+const EventEmitter = require("events").EventEmitter
+const Socket = require("socket.io/lib/socket")
+const PLAYER_STATES = require("../lib/playerStates")
+const debug = require('debug')('karaoke_room')
 /**
  * Room Class:
  * Attributes:
@@ -22,118 +23,140 @@ const PLAYER_STATES = require("../lib/playerStates");
  * * 'clients-ready': all clients have loaded
  *
  */
-export const KARAOKE_EVENTS = {
+const KARAOKE_EVENTS = {
   SONG_ADDED: "song-added",
   CLIENTS_READY: "clients-ready",
   NOW_PLAYING: "now-playing",
   EMPTY_QUEUE: "empty-queue",
-};
+  COUNTDOWN: "count-down"
+}
+
+const COUNTDOWN_LENGTH = 5000
 
 class KaraokeRoom {
   constructor({ id }) {
-    this.id = id;
-    this.songQueue = [];
-    this.nowPlaying = null;
-    this.videoPosition = 0;
-    this.users = [];
-    this.awaitingClients = null;
-    this.playerStatus = PLAYER_STATES.UNSTARTED;
+    this.id = id
+    this.songQueue = []
+    this.nowPlaying = null
+    this.videoPosition = 0
+    this.users = []
+    this.awaitingClients = null
+    this.playerStatus = PLAYER_STATES.UNSTARTED
+    this.countdown = null
   }
 
   addUser = (socket) => {
     if (!(socket instanceof Socket)) {
-      throw new Error("karaokeRoom.addUser requires an instance of Socket");
+      throw new Error("karaokeRoom.addUser requires an instance of Socket")
     }
-    this.users.push(socket);
+    this.users.push(socket)
+    debug('added user %s. (%s total)', socket.id, this.users.length)
   };
 
   removeUser = (socket) => {
     if (!(socket instanceof Socket)) {
-      throw new Error("karaokeRoom.removeUser requires an instance of Socket");
+      throw new Error("karaokeRoom.removeUser requires an instance of Socket")
     }
-    this.users = this.users.filter((s) => s.id !== socket.id);
+    this.users = this.users.filter((s) => s.id !== socket.id)
+    debug('Removing user %s. (%s total)', socket.id, this.users.length)
+
   };
 
   addToSongQueue = (videoData, userId) => {
     this.songQueue.push({
       singerId: userId,
       videoData,
-    });
+    })
 
+    debug(`A new song was just added to the queue 👻 (${this.songQueue.length} total)`)
     this.#emitMessage(
       KARAOKE_EVENTS.SONG_ADDED,
       `A new song was just added to the queue 👻 (${this.songQueue.length} total)`
-    );
+    )
   };
 
   #emitMessage = (eventKey, message) => {
     this.emit(eventKey, {
       message,
       data: this.roomData(),
-    });
+    })
   };
 
   roomData = () => ({
     currentSong: this.nowPlaying,
     currentSinger: this.nowPlaying ? this.nowPlaying.singerId : null,
     upNext: this.songQueue[0],
-    position: this.videoPosition,
+    videoPosition: this.videoPosition,
   });
 
   isSongPlaying = () => {
-    return this.playerStatus === PLAYER_STATES.PLAYING;
+    return this.playerStatus === PLAYER_STATES.PLAYING
   };
 
   // Remove and return song at top of queue
   advanceQueue = () => {
-    this.videoPosition = 0;
-    this.nowPlaying = this.songQueue.shift();
-    return this.nowPlaying;
+    debug('Advancing queue...')
+    this.videoPosition = 0
+    this.nowPlaying = this.songQueue.shift()
+    debug('Now Playing: %s', this.nowPlaying.videoData.title)
+    return this.nowPlaying
   };
 
   refreshAwaitingClients = () => {
-    this.playerStatus = PLAYER_STATES.UNSTARTED;
-    this.awaitingClients = this.users.map((socket) => socket.id);
+    debug("Refreshing awaiting clients")
+    this.playerStatus = PLAYER_STATES.UNSTARTED
+    this.awaitingClients = this.users.map((socket) => socket.id)
   };
 
   updateAwaitingClients = (socket) => {
     // If user is ready but clients are still loading video
-    if (this.playerStatus === PLAYER_STATES.UNSTARTED) {
+    debug("Updating waiting clients. User %s ready", socket.id)
+    if (this.playerStatus !== PLAYER_STATES.PLAYING) {
+      debug("Removing user from awaitingClients (%s). %s left.", socket.id, this.awaitingClients.length)
       this.awaitingClients = this.awaitingClients.filter(
         (id) => id !== socket.id
-      );
+      )
 
       // If waiting list is now empty, set status to PLAYING and emit CLIENTS_READY
       if (this.awaitingClients.length === 0) {
-        this.playerStatus = PLAYER_STATES.PLAYING;
-        this.#emitMessage(KARAOKE_EVENTS.CLIENTS_READY, "Get ready to sing!");
+        debug("All clients loaded, setting playing")
+        this.playerStatus = PLAYER_STATES.PLAYING
+        this.#emitMessage(KARAOKE_EVENTS.CLIENTS_READY, "Get ready to sing!")
       }
     }
   };
 
-  cycleSong = (cb) => {
-    const currentSong = this.advanceQueue();
+  cycleSong = () => {
+    const currentSong = this.advanceQueue()
 
     if (currentSong) {
-      this.refreshAwaitingClients();
+      this.playerStatus = PLAYER_STATES.UNSTARTED
+      this.videoPosition = 0
+      this.refreshAwaitingClients()
+      debug('Cycle Song emitting Now Playing')
       this.#emitMessage(
         KARAOKE_EVENTS.NOW_PLAYING,
         `Now playing: ${currentSong.videoData.title}`
-      );
+      )
     } else {
+      debug('Queue Empty')
       this.#emitMessage(
         KARAOKE_EVENTS.EMPTY_QUEUE,
         `Song Queue is empty. Add more!`
-      );
-      return false;
+      )
+      return false
     }
   };
+
+  endSong = () => {
+    this.playerStatus = PLAYER_STATES.ENDED
+    this.cycleSong()
+  }
 }
 
-util.inherits(KaraokeRoom, EventEmitter);
+util.inherits(KaraokeRoom, EventEmitter)
 
 module.exports = {
   KaraokeRoom,
-  CLIENT_STATUS,
   KARAOKE_EVENTS,
-};
+}

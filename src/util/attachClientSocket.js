@@ -54,8 +54,9 @@ export default function (parent) {
     })
 
     socket.on("notification", (data) => {
+      console.log(data)
       parent.setState({ notification: null })
-      parent.setState({ notification: data.message })
+      parent.setState({ ...data.data, notification: data.message })
 
       setTimeout(() => {
         if (parent.state.notification === data.message) {
