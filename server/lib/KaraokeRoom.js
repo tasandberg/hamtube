@@ -1,7 +1,11 @@
-const util = require("util")
-const EventEmitter = require("events").EventEmitter
-const Socket = require("socket.io/lib/socket")
+const getNumberWithOrdinal = require("../util/numberHelper")
 const PLAYER_STATES = require("../lib/playerStates")
+const {
+  initKaraokeUserSocket,
+  teardownKaraokeUserSocket,
+} = require("./karaoke-user-socket")
+const debug = require("debug")("KaraokeRoom")
+
 /**
  * Room Class:
  * Attributes:
@@ -22,36 +26,36 @@ const PLAYER_STATES = require("../lib/playerStates")
  * * 'clients-ready': all clients have loaded
  *
  */
-export const KARAOKE_EVENTS = {
-  SONG_ADDED: "song-added",
-  CLIENTS_READY: "clients-ready",
-  NOW_PLAYING: "now-playing",
-  EMPTY_QUEUE: "empty-queue",
-}
 
 class KaraokeRoom {
-  constructor({ id }) {
-    this.id = id
+  constructor(props) {
+    const requiredProps = ["id", "io"]
+    requiredProps.forEach((prop) => {
+      if (!props[prop]) {
+        throw new Error(`KaraokeRoom requires ${prop}`)
+      }
+    })
+
+    this.id = props.id
+    this.io = props.io
     this.songQueue = []
     this.nowPlaying = null
     this.videoPosition = 0
-    this.users = []
+    this.users = {}
     this.awaitingClients = null
     this.playerStatus = PLAYER_STATES.UNSTARTED
   }
 
   addUser = (socket) => {
-    if (!(socket instanceof Socket)) {
-      throw new Error("karaokeRoom.addUser requires an instance of Socket")
-    }
-    this.users.push(socket)
+    socket.join(this.id)
+    initKaraokeUserSocket(socket, this)
+    this.users[socket.id] = socket
+    debug("Added user %s. %s total", socket.id, Object.keys(this.users).length)
   }
 
   removeUser = (socket) => {
-    if (!(socket instanceof Socket)) {
-      throw new Error("karaokeRoom.removeUser requires an instance of Socket")
-    }
-    this.users = this.users.filter((s) => s.id !== socket.id)
+    teardownKaraokeUserSocket(socket)
+    delete this.users[socket.id]
   }
 
   addToSongQueue = (videoData, userId) => {
@@ -60,17 +64,17 @@ class KaraokeRoom {
       videoData,
     })
 
-    this.#emitMessage(
-      KARAOKE_EVENTS.SONG_ADDED,
+    this.notifyRoom(
       `A new song was just added to the queue 👻 (${this.songQueue.length} total)`
     )
-  }
 
-  #emitMessage = (eventKey, message) => {
-    this.emit(eventKey, {
-      message,
-      data: this.roomData(),
+    // Send success feedback to user
+    const placeInLine = getNumberWithOrdinal(this.songQueue.length)
+    this.users[userId].emit("song-added-success", {
+      message: `Song added. It's ${placeInLine} in line. 🔥`,
     })
+
+    this.sendRoomData(this.roomData())
   }
 
   roomData = () => ({
@@ -92,48 +96,64 @@ class KaraokeRoom {
   }
 
   refreshAwaitingClients = () => {
-    this.playerStatus = PLAYER_STATES.UNSTARTED
-    this.awaitingClients = this.users.map((socket) => socket.id)
+    this.awaitingClients = Object.keys(this.users)
   }
 
   updateAwaitingClients = (socket) => {
-    // If user is ready but clients are still loading video
-    if (this.playerStatus === PLAYER_STATES.UNSTARTED) {
+    if ((this.playerStatus = PLAYER_STATES.PLAYING)) {
+      throw new Error("Cannot update awaiting clients if song is playing")
+    } else {
       this.awaitingClients = this.awaitingClients.filter(
         (id) => id !== socket.id
       )
-
       // If waiting list is now empty, set status to PLAYING and emit CLIENTS_READY
       if (this.awaitingClients.length === 0) {
         this.playerStatus = PLAYER_STATES.PLAYING
-        this.#emitMessage(KARAOKE_EVENTS.CLIENTS_READY, "Get ready to sing!")
+        this.notifyRoom("Get ready to sing!")
+      } else {
+        debug("Still waiting on %s clients", this.awaitingClients.length)
       }
     }
   }
 
   cycleSong = (cb) => {
+    this.playerStatus = PLAYER_STATES.UNSTARTED
+
     const currentSong = this.advanceQueue()
 
     if (currentSong) {
       this.refreshAwaitingClients()
-      this.#emitMessage(
-        KARAOKE_EVENTS.NOW_PLAYING,
-        `Now playing: ${currentSong.videoData.title}`
-      )
+      this.notifyRoom(`Now playing: ${currentSong.videoData.title}`)
     } else {
-      this.#emitMessage(
-        KARAOKE_EVENTS.EMPTY_QUEUE,
-        `Song Queue is empty. Add more!`
-      )
+      this.notifyRoom(`Song Queue is empty. Add more!`)
       return false
     }
   }
-}
 
-util.inherits(KaraokeRoom, EventEmitter)
+  playVideo = (socket = null) => {
+    this.#videoControl(PLAYER_STATES.PLAYING, socket)
+  }
+
+  stopVideo = (socket = null) => {
+    this.#videoControl(PLAYER_STATES.ENDED, socket)
+  }
+
+  #videoControl = (code, socket = null) => {
+    const emitter = socket ? socket : this.io.to(this.id)
+    emitter.emit("video-control", code)
+  }
+
+  notifyRoom = (message) => {
+    this.io.to(this.id).emit("notification", {
+      message,
+    })
+  }
+
+  sendRoomData = (data) => {
+    this.io.to(this.id).emit("room-data", data)
+  }
+}
 
 module.exports = {
   KaraokeRoom,
-  CLIENT_STATUS,
-  KARAOKE_EVENTS,
 }
