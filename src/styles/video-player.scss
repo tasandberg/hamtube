@@ -27,6 +27,25 @@
   align-items: center;
   justify-content: center;
 
+  &-clear {
+    background: transparent;
+  }
+
+  button {
+    opacity: 0;
+    border-radius: 20px;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.8);
+    transition: 300ms;
+  }
+
+  &:hover {
+    button {
+      opacity: 1;
+      transition: 300ms;
+    }
+  }
+
   &.fade {
     opacity: 0;
     transition: 2s;

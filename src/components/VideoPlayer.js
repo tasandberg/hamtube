@@ -18,11 +18,15 @@ class VideoPlayer extends React.Component {
     const currentVideoState = this.props.videoState
 
     if (currentVideoState !== prevProps.videoState) {
+      console.log('video state changed from %s to %s', prevProps.videoState, currentVideoState)
+
       switch (currentVideoState) {
         case YouTube.PlayerState.ENDED:
           this.player.stopVideo()
           break
         case YouTube.PlayerState.PLAYING:
+          console.log('PLAYING NOW')
+
           this.player.seekTo(this.props.videoPosition)
           this.player.playVideo()
           break
@@ -33,7 +37,7 @@ class VideoPlayer extends React.Component {
     }
 
     if (!_.isEqual(prevProps.videoData, this.props.videoData)) {
-      console.log("New video: %s", prevProps.videoData)
+      console.log("New video: %s", this.props.videoData)
     }
   }
 
@@ -77,6 +81,16 @@ class VideoPlayer extends React.Component {
     this.props.broadcastReady()
   }
 
+  playControls = () => (
+    <div className='video-overlay video-overlay-clear skip-overlay'>
+      <div>
+        <button style={{ cursor: "pointer", border: 'none', outline: 'none' }} onClick={this.props.skipSong}>
+          <i className="has-text-white fas fa-step-forward fa-3x"></i>
+        </button>
+      </div>
+    </div>
+  )
+
   renderVideoPlayer(videoData, isLocalUser) {
     return (
       <Fragment>
@@ -92,6 +106,8 @@ class VideoPlayer extends React.Component {
             </center>
           </div>
         </div>
+        {this.state.isPlaying && isLocalUser && this.playControls()}
+
         <YouTube
           videoId={extractVideoId(videoData.url)}
           ref={(youtube) => (this.youtube = youtube)}
@@ -124,8 +140,8 @@ class VideoPlayer extends React.Component {
         {videoData ? (
           this.renderVideoPlayer(videoData, isLocalUser)
         ) : (
-          <span>TODO: Empty video state</span>
-        )}
+            <span>TODO: Empty video state</span>
+          )}
       </div>
     )
   }

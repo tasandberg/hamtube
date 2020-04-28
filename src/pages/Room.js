@@ -170,6 +170,12 @@ export default class Room extends React.Component {
     this.socket.emit("song-ended")
   }
 
+  skipSong = () => {
+    if (this.state.currentSinger === this.socket.id) {
+      this.socket.emit("skip-song")
+    }
+  }
+
   render = () => {
     const {
       currentSong,
@@ -203,6 +209,7 @@ export default class Room extends React.Component {
           videoData={currentSong["videoData"]}
           videoPosition={videoPosition}
           onEnd={this.onEnd}
+          skipSong={this.skipSong}
           broadcastReady={() => this.socket.emit("player-ready")}
         />
         <SongList

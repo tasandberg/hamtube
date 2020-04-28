@@ -24,7 +24,7 @@ module.exports = function (server) {
 
   const onConnection = (socket) => {
     const roomId = socket.handshake.query.room
-    const room = initializeRoom(roomId)
+    let room = initializeRoom(roomId)
 
     room.addUser(socket)
 
@@ -88,18 +88,19 @@ module.exports = function (server) {
      *
      */
     socket.on("player-ready", () => {
+      room.updateAwaitingClients(socket)
+
       if (room.isSongPlaying()) {
         console.log('song playing, send play')
         videoControl(PLAYER_STATES.PLAYING, socket)
       } else {
         console.log('Player ready, updating awaitingClients')
-        room.updateAwaitingClients(socket)
       }
     })
 
     socket.on("disconnect", function () {
       console.log("Disconnecting ", socket.id)
-      room.removeUser(socket)
+      room.updateAwaitingClients(socket)
       io.to(roomId).emit("destroy", socket.id)
     })
 
@@ -120,6 +121,13 @@ module.exports = function (server) {
 
     socket.on("add-song", (data) => {
       room.addToSongQueue(data, socket.id)
+    })
+
+    socket.on("skip-song", (data) => {
+      if (room.nowPlaying.singerId === socket.id) {
+        debug("Singer requested song skip. Skipping.")
+        room.endSong()
+      }
     })
 
     /**

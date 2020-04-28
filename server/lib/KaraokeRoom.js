@@ -40,7 +40,7 @@ class KaraokeRoom {
     this.nowPlaying = null
     this.videoPosition = 0
     this.users = []
-    this.awaitingClients = null
+    this.awaitingClients = []
     this.playerStatus = PLAYER_STATES.UNSTARTED
     this.countdown = null
   }
@@ -57,9 +57,10 @@ class KaraokeRoom {
     if (!(socket instanceof Socket)) {
       throw new Error("karaokeRoom.removeUser requires an instance of Socket")
     }
+    debug("Removing user %s", socket.id)
+    this.updateAwaitingClients(socket)
     this.users = this.users.filter((s) => s.id !== socket.id)
     debug('Removing user %s. (%s total)', socket.id, this.users.length)
-
   };
 
   addToSongQueue = (videoData, userId) => {
@@ -109,14 +110,10 @@ class KaraokeRoom {
   };
 
   updateAwaitingClients = (socket) => {
-    // If user is ready but clients are still loading video
-    debug("Updating waiting clients. User %s ready", socket.id)
-    if (this.playerStatus !== PLAYER_STATES.PLAYING) {
-      debug("Removing user from awaitingClients (%s). %s left.", socket.id, this.awaitingClients.length)
-      this.awaitingClients = this.awaitingClients.filter(
-        (id) => id !== socket.id
-      )
+    this.awaitingClients = this.awaitingClients.filter(s => s.id !== socket.id)
+    debug("Removing user from awaitingClients (%s). %s left.", socket.id, this.awaitingClients.length)
 
+    if (this.playerStatus !== PLAYER_STATES.PLAYING) {
       // If waiting list is now empty, set status to PLAYING and emit CLIENTS_READY
       if (this.awaitingClients.length === 0) {
         debug("All clients loaded, setting playing")
@@ -149,6 +146,7 @@ class KaraokeRoom {
   };
 
   endSong = () => {
+    debug("Ending song %s", this.nowPlaying.videoData.title)
     this.playerStatus = PLAYER_STATES.ENDED
     this.cycleSong()
   }
