@@ -1,5 +1,6 @@
 import initializePeer from "./peer"
 import io from "socket.io-client"
+const debug = require("debug")("Hamtube:ClientSocket")
 
 export default function (parent) {
   const socket = io("/", { query: `room=${parent.roomId}` })
@@ -8,13 +9,13 @@ export default function (parent) {
   // parent.startLocalVideo()
 
   socket.on("connect", () => {
-    console.log("Connected to signalling server, Peer ID: %s", socket.id)
+    debug("Connected to signalling server, Peer ID: %s", socket.id)
 
     /* On connect, we will send and receive data from all connected peers */
     socket.on("peer", (data) => {
       const peerId = data.peerId
       const peer = initializePeer(parent, socket, data)
-      console.log("Peer added", peerId)
+      debug("Peer added", peerId)
 
       parent.setState((prevState) => ({
         peers: {
@@ -31,13 +32,10 @@ export default function (parent) {
     })
 
     socket.on("room-data", (data) => {
-      console.log(data, "room-data")
-      const { currentSinger, currentSong, position, upNext } = data
       parent.setState({
-        currentSinger: currentSinger,
-        currentSong: currentSong || {},
-        upNext: upNext,
-        videoPosition: position || 0,
+        currentSong: data.currentSong,
+        currentSinger: data.currentSinger,
+        upNext: data.upNext,
       })
     })
 
@@ -77,7 +75,7 @@ export default function (parent) {
     })
 
     socket.on("video-control", (code) => {
-      console.log("video-control", code)
+      debug("video-control", code)
 
       parent.setState({
         videoState: code,
@@ -91,9 +89,9 @@ export default function (parent) {
     })
 
     socket.on("new-song", ({ currentSong, currentSinger, upNext }) => {
-      console.log(upNext, "up next")
-      console.log(currentSinger, "currentSinger")
-      console.log(currentSong, "currentSong")
+      debug(upNext, "up next")
+      debug(currentSinger, "currentSinger")
+      debug(currentSong, "currentSong")
 
       parent.setState({
         currentSong,

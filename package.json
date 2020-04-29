@@ -36,8 +36,8 @@
     "youtube-dl": "^3.0.2"
   },
   "scripts": {
-    "client-dev": "react-scripts start",
-    "server-dev": "DEBUG=KaraokeRoom nodemon server/server.js",
+    "client-dev": "DEBUG=VideoPlayer react-scripts start",
+    "server-dev": "nodemon server/server.js",
     "start": "node server/server.js",
     "dev": "./bin/startup.sh",
     "heroku-postbuild": "yarn build",

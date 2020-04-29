@@ -5,6 +5,10 @@ import "./styles/main.scss"
 import App from "./App"
 import * as serviceWorker from "./serviceWorker"
 
+if (process.env.NODE_ENV !== "production") {
+  localStorage.setItem("debug", "Hamtube:*")
+}
+
 ReactDOM.render(
   <React.StrictMode>
     <App />

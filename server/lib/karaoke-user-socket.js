@@ -1,9 +1,11 @@
+const debug = require("debug")("KaraokeUserSocket")
 module.exports = {
   teardownKaraokeUserSocket: function (socket) {
     socket.removeAllListeners()
   },
   initKaraokeUserSocket: function (socket, karaokeRoom) {
     socket.on("player-ready", () => {
+      debug("Player-Ready received from %s", socket.id)
       if (karaokeRoom.songIsPlaying()) {
         karaokeRoom.playVideo(socket)
       } else {
@@ -12,11 +14,17 @@ module.exports = {
     })
 
     socket.on("video-position", (data) => {
-      karaokeRoom.videoPosition = data // Can we skip this?
-      karaokeRoom.sendRoomData("room-data", { videoPosition: data })
+      if (
+        karaokeRoom.nowPlaying &&
+        karaokeRoom.nowPlaying.singerId === socket.id
+      ) {
+        socket.to(karaokeRoom.id).emit("video-position", data)
+      }
     })
 
     socket.on("song-ended", () => {
+      debug("Song-ended received from %s", socket.id)
+
       // Only Take action if received from current singer
       if (
         karaokeRoom.nowPlaying &&
@@ -29,10 +37,14 @@ module.exports = {
     })
 
     socket.on("add-song", (data) => {
+      debug("Add-song received from %s", socket.id)
+
       karaokeRoom.addToSongQueue(data, socket.id)
     })
 
     socket.on("disconnect", () => {
+      debug("Disconnect received from %s", socket.id)
+
       karaokeRoom.removeUser(socket)
     })
   },

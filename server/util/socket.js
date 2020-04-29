@@ -22,7 +22,7 @@ module.exports = function (server) {
 
   const onConnection = (socket) => {
     const roomId = socket.handshake.query.room
-    const room = initializeRoom(roomId)
+    const room = initializeRoom(roomId, io)
 
     room.addUser(socket)
 
@@ -82,11 +82,6 @@ module.exports = function (server) {
         initiator: false,
       })
     })
-
-    if (room.songIsPlaying()) {
-      console.log("Song is playing, sending room data to new user")
-      broadcastRoomData(socket.id)
-    }
   }
 
   io.on("connection", onConnection)
