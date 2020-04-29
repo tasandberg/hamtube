@@ -37,7 +37,7 @@
   },
   "scripts": {
     "client-dev": "DEBUG=VideoPlayer react-scripts start",
-    "server-dev": "nodemon server/server.js",
+    "server-dev": "nodemon src/server/server.js",
     "start": "node server/server.js",
     "dev": "./bin/startup.sh",
     "heroku-postbuild": "yarn build",

@@ -5,7 +5,7 @@ const app = express()
 // const bodyParser = require("body-parser")
 const path = require("path")
 const port = process.env.PORT || 4000
-const apiRouter = require("../routes/api")
+const apiRouter = require("../../routes/api")
 const fs = require("fs")
 const morgan = require("morgan")
 

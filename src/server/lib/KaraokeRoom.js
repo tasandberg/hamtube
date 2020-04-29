@@ -1,5 +1,5 @@
 const getNumberWithOrdinal = require("../util/numberHelper")
-const PLAYER_STATES = require("../lib/playerStates")
+const PLAYER_STATES = require("./playerStates")
 const {
   initKaraokeUserSocket,
   teardownKaraokeUserSocket,

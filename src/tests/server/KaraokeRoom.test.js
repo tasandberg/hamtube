@@ -1,8 +1,8 @@
 import { inherits } from "util"
 import EventEmitter from "events"
-import { KaraokeRoom } from "../../../server/lib/KaraokeRoom"
+import { KaraokeRoom } from "../../server/lib/KaraokeRoom"
 import { forEach } from "lodash"
-const PLAYER_STATES = require("../../../server/lib/playerStates")
+const PLAYER_STATES = require("../../server/lib/playerStates")
 
 let io = {
   to: jest.fn(() => ({ emit: jest.fn() })),
@@ -43,7 +43,7 @@ describe("init", () => {
   const expectedInitialProperties = {
     songQueue: [],
     nowPlaying: null,
-    videoPosition: 0,
+    videoState: null,
     users: {},
   }
   forEach(expectedInitialProperties, (value, key) => {
@@ -192,7 +192,7 @@ describe("user events", () => {
     })
     describe("when one song is nowPlaying and another in the queue", () => {
       it("has both users in awaitingClients", () => {
-        expect(newRoom.playerStatus).toEqual(PLAYER_STATES.UNSTARTED)
+        expect(newRoom.videoState).toEqual(PLAYER_STATES.UNSTARTED)
         expect(newRoom.awaitingClients).toEqual([socket.id, otherUser.id])
       })
 
@@ -204,7 +204,7 @@ describe("user events", () => {
       it("plays video when all users emit player-ready", () => {
         socket.emit("player-ready")
         otherUser.emit("player-ready")
-        expect(newRoom.playerStatus).toBe(PLAYER_STATES.PLAYING)
+        expect(newRoom.videoState).toBe(PLAYER_STATES.PLAYING)
       })
     })
 
@@ -239,19 +239,19 @@ describe("user events", () => {
     it("does nothing when user is not current singer", () => {
       otherUser.emit("song-ended")
       expect(newRoom.nowPlaying.videoData.title).toEqual("first song")
-      expect(newRoom.playerStatus).toEqual(PLAYER_STATES.PLAYING)
+      expect(newRoom.videoState).toEqual(PLAYER_STATES.PLAYING)
     })
 
     it("cycles song if user us current singer", () => {
       socket.emit("song-ended")
       expect(newRoom.nowPlaying.videoData.title).toEqual("second song")
-      expect(newRoom.playerStatus).toEqual(PLAYER_STATES.UNSTARTED)
+      expect(newRoom.videoState).toEqual(PLAYER_STATES.UNSTARTED)
     })
 
     it("leaves player in empty state if no songs are left", () => {
       socket.emit("song-ended")
       otherUser.emit("song-ended")
-      expect(newRoom.playerStatus).toBe(null)
+      expect(newRoom.videoState).toBe(null)
       expect(newRoom.nowPlaying).toEqual(null)
     })
   })
@@ -319,9 +319,9 @@ describe("cycling songs", () => {
     })
 
     it("sets playerStatus to null", () => {
-      newRoom.playerStatus = 5
+      newRoom.videoState = 5
       newRoom.cycleSongs()
-      expect(newRoom.playerStatus).toBe(null)
+      expect(newRoom.videoState).toBe(null)
     })
   })
 })
@@ -375,17 +375,17 @@ describe("big mamma jamma integration test", () => {
         title: "Keep on rockin",
       })
       user3.emit("player-ready")
-      expect(newRoom.playerStatus).toBe(PLAYER_STATES.PLAYING)
+      expect(newRoom.videoState).toBe(PLAYER_STATES.PLAYING)
       expect(newRoom.nowPlaying.videoData.title).toEqual("Donks")
       user1.emit("song-ended")
-      expect(newRoom.playerStatus).toBe(PLAYER_STATES.UNSTARTED)
+      expect(newRoom.videoState).toBe(PLAYER_STATES.UNSTARTED)
       expect(newRoom.nowPlaying.videoData.title).toEqual("Donks 2")
       user1.emit("player-ready")
       newRoom.addUser(user4)
       user2.emit("player-ready")
       user3.emit("player-ready")
       user4.emit("player-ready")
-      expect(newRoom.playerStatus).toBe(PLAYER_STATES.PLAYING)
+      expect(newRoom.videoState).toBe(PLAYER_STATES.PLAYING)
       expect(newRoom.nowPlaying.videoData.title).toEqual("Donks 2")
 
       user1.emit("song-ended")
@@ -394,19 +394,19 @@ describe("big mamma jamma integration test", () => {
       })
       user4.emit("player-ready")
       user3.emit("player-ready")
-      expect(newRoom.playerStatus).toBe(PLAYER_STATES.UNSTARTED)
+      expect(newRoom.videoState).toBe(PLAYER_STATES.UNSTARTED)
       expect(newRoom.nowPlaying.videoData.title).toEqual("Forever young")
 
       user2.emit("player-ready")
       user1.emit("player-ready")
-      expect(newRoom.playerStatus).toBe(PLAYER_STATES.PLAYING)
+      expect(newRoom.videoState).toBe(PLAYER_STATES.PLAYING)
 
       user1.emit("song-ended") // Non-Singer, nothing should happen
-      expect(newRoom.playerStatus).toBe(PLAYER_STATES.PLAYING)
+      expect(newRoom.videoState).toBe(PLAYER_STATES.PLAYING)
 
       expect(newRoom.nowPlaying.videoData.title).toEqual("Forever young")
       user3.emit("song-ended")
-      expect(newRoom.playerStatus).toBe(PLAYER_STATES.UNSTARTED)
+      expect(newRoom.videoState).toBe(PLAYER_STATES.UNSTARTED)
       expect(newRoom.nowPlaying.videoData.title).toEqual("Keep on rockin")
 
       // Test disconnect during ready-check
@@ -414,16 +414,16 @@ describe("big mamma jamma integration test", () => {
       user4.emit("player-ready")
       user1.emit("player-ready")
       user3.emit("disconnect")
-      expect(newRoom.playerStatus).toBe(PLAYER_STATES.PLAYING)
+      expect(newRoom.videoState).toBe(PLAYER_STATES.PLAYING)
       expect(newRoom.nowPlaying.videoData.title).toEqual("Keep on rockin")
 
       // Test disconnect in mid-song
       user2.emit("disconnect")
-      expect(newRoom.playerStatus).toBe(PLAYER_STATES.UNSTARTED)
+      expect(newRoom.videoState).toBe(PLAYER_STATES.UNSTARTED)
       expect(newRoom.nowPlaying.videoData.title).toEqual("Master of Puppets")
       user4.emit("disconnect")
 
-      expect(newRoom.playerStatus).toBe(null)
+      expect(newRoom.videoState).toBe(null)
       expect(newRoom.users).toEqual({ [user1.id]: user1 })
       expect(newRoom.awaitingClients).toHaveLength(0)
       expect(newRoom.nowPlaying).toBe(null)
