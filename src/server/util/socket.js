@@ -28,14 +28,6 @@ module.exports = function (server) {
 
     console.log("Connection to room %s with ID: %s", roomId, socket.id)
 
-    /**
-     * Song Queue Functions
-     */
-    const broadcastRoomData = (socketId) => {
-      const emitter = socketId ? io.to(socketId) : io.to(roomId)
-      emitter.emit("room-data", room.roomData())
-    }
-
     socket.on("disconnect", function () {
       console.log("Disconnecting ", socket.id)
       io.to(roomId).emit("destroy", socket.id)

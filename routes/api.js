@@ -2,16 +2,16 @@ const express = require("express")
 const router = express.Router()
 const chatRouter = express.Router({ mergeParams: true })
 const db = require("../models/index.js")
-const Chat = db.Chat
+const Room = db.Room
 
 chatRouter.get("/new", (req, res) => {
-  Chat.create().then((c) => {
+  Room.create().then((c) => {
     res.json({ id: c.id })
   })
 })
 
 chatRouter.get("/:chatId", (req, res) => {
-  Chat.findByPk(req.params.chatId)
+  Room.findByPk(req.params.chatId)
     .then((data) => {
       if (data) {
         res.json({ chat: data })
