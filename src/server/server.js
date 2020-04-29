@@ -13,7 +13,7 @@ const morgan = require("morgan")
 app.use(morgan("tiny"))
 
 // Declare public static files
-app.use(express.static(path.join(__dirname, "build")))
+app.use(express.static(path.join(process.cwd(), "build")))
 
 // CORS Headers
 app.use(function (req, res, next) {
@@ -43,10 +43,11 @@ app.use(subdomain("api", apiRouter))
 
 app.get("*", function (req, res) {
   let indexPath
+
   if (process.env.NODE_ENV === "production") {
-    indexPath = path.join(__dirname, "build", "index.html")
+    indexPath = path.join(process.cwd(), "build", "index.html")
   } else {
-    indexPath = path.join(__dirname, "public", "index.html")
+    indexPath = path.join(process.cwd(), "public", "index.html")
   }
   res.sendFile(indexPath)
 })
