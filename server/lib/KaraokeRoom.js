@@ -42,95 +42,109 @@ class KaraokeRoom {
     this.nowPlaying = null
     this.videoPosition = 0
     this.users = {}
-    this.awaitingClients = null
-    this.playerStatus = PLAYER_STATES.UNSTARTED
+    this.awaitingClients = []
+    this.playerStatus = null
   }
 
   addUser = (socket) => {
     socket.join(this.id)
     initKaraokeUserSocket(socket, this)
     this.users[socket.id] = socket
+    this.sendRoomData(this.roomData(), socket)
+    if (this.awaitingClients.length > 0) this.awaitingClients.push(socket.id)
     debug("Added user %s. %s total", socket.id, Object.keys(this.users).length)
   }
 
   removeUser = (socket) => {
     teardownKaraokeUserSocket(socket)
+    this.updateAwaitingClients(socket)
+
+    // If this was the current user, trash that video
+    if (this.nowPlaying && this.nowPlaying.singerId === socket.id) {
+      this.stopVideo()
+      this.cycleSongs()
+    }
     delete this.users[socket.id]
   }
 
+  // Adds song data and singerId to song queue
+  // Notifies room
+  // Sends success to user
+  // Sends room data to room
   addToSongQueue = (videoData, userId) => {
     this.songQueue.push({
       singerId: userId,
       videoData,
     })
+    this.songQueueUpdated()
+    // Send success feedback to user
+    let message
+    if (this.songQueue.length === 0) {
+      message = `Song added. Get ready to sing!`
+    } else {
+      const placeInLine = getNumberWithOrdinal(this.songQueue.length)
+      message = `Song added. It's ${placeInLine} in line. 🔥`
+    }
 
+    this.users[userId].emit("song-added-success", {
+      message,
+    })
+  }
+
+  songQueueUpdated = () => {
     this.notifyRoom(
       `A new song was just added to the queue 👻 (${this.songQueue.length} total)`
     )
 
-    // Send success feedback to user
-    const placeInLine = getNumberWithOrdinal(this.songQueue.length)
-    this.users[userId].emit("song-added-success", {
-      message: `Song added. It's ${placeInLine} in line. 🔥`,
-    })
-
-    this.sendRoomData(this.roomData())
+    if (this.nowPlaying) {
+      this.sendRoomData(this.roomData())
+    } else {
+      this.cycleSongs()
+    }
   }
-
-  roomData = () => ({
-    currentSong: this.nowPlaying,
-    currentSinger: this.nowPlaying ? this.nowPlaying.singerId : null,
-    upNext: this.songQueue[0],
-    position: this.videoPosition,
-  })
 
   songIsPlaying = () => {
     return this.playerStatus === PLAYER_STATES.PLAYING
   }
 
-  // Remove and return song at top of queue
-  advanceQueue = () => {
+  // This method can be called at any time (even to skip current song)
+  cycleSongs = (cb) => {
+    const currentSong = (this.nowPlaying = this.songQueue.shift() || null)
     this.videoPosition = 0
-    this.nowPlaying = this.songQueue.shift()
-    return this.nowPlaying
+
+    if (currentSong) {
+      this.playerStatus = PLAYER_STATES.UNSTARTED
+      this.refreshAwaitingClients()
+      this.notifyRoom(`Queueing up ${currentSong.videoData.title}`)
+    } else {
+      this.playerStatus = null
+      this.awaitingClients = []
+      this.notifyRoom(`Song Queue is empty. Add more!`)
+    }
   }
 
   refreshAwaitingClients = () => {
     this.awaitingClients = Object.keys(this.users)
   }
 
-  updateAwaitingClients = (socket) => {
-    if ((this.playerStatus = PLAYER_STATES.PLAYING)) {
-      throw new Error("Cannot update awaiting clients if song is playing")
-    } else {
-      this.awaitingClients = this.awaitingClients.filter(
-        (id) => id !== socket.id
-      )
-      // If waiting list is now empty, set status to PLAYING and emit CLIENTS_READY
-      if (this.awaitingClients.length === 0) {
-        this.playerStatus = PLAYER_STATES.PLAYING
-        this.notifyRoom("Get ready to sing!")
-      } else {
-        debug("Still waiting on %s clients", this.awaitingClients.length)
-      }
-    }
+  removeUserFromAwaiting = (socket) => {
+    this.awaitingClients = this.awaitingClients.filter((id) => id !== socket.id)
   }
 
-  cycleSong = (cb) => {
-    this.playerStatus = PLAYER_STATES.UNSTARTED
-
-    const currentSong = this.advanceQueue()
-
-    if (currentSong) {
-      this.refreshAwaitingClients()
-      this.notifyRoom(`Now playing: ${currentSong.videoData.title}`)
+  updateAwaitingClients = (socket) => {
+    this.removeUserFromAwaiting(socket)
+    // If waiting list is now empty and a song is queued up,
+    // set status to PLAYING and notify room
+    if (this.awaitingClients.length === 0 && this.nowPlaying) {
+      this.notifyRoom(`Now playing: ${this.nowPlaying.videoData.title}`)
+      this.playVideo()
     } else {
-      this.notifyRoom(`Song Queue is empty. Add more!`)
-      return false
+      debug("Still waiting on %s clients", this.awaitingClients.length)
     }
   }
 
   playVideo = (socket = null) => {
+    this.playerStatus = PLAYER_STATES.PLAYING
     this.#videoControl(PLAYER_STATES.PLAYING, socket)
   }
 
@@ -149,9 +163,17 @@ class KaraokeRoom {
     })
   }
 
-  sendRoomData = (data) => {
-    this.io.to(this.id).emit("room-data", data)
+  sendRoomData = (data, socket = null) => {
+    const emitter = socket ? socket : this.io.to(this.id)
+    emitter.emit("room-data", data)
   }
+
+  roomData = () => ({
+    currentSong: this.nowPlaying,
+    currentSinger: this.nowPlaying ? this.nowPlaying.singerId : null,
+    upNext: this.songQueue[0],
+    position: this.videoPosition,
+  })
 }
 
 module.exports = {

@@ -38,7 +38,6 @@ module.exports = function (server) {
 
     socket.on("disconnect", function () {
       console.log("Disconnecting ", socket.id)
-      room.removeUser(socket)
       io.to(roomId).emit("destroy", socket.id)
     })
 

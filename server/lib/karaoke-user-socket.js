@@ -17,13 +17,23 @@ module.exports = {
     })
 
     socket.on("song-ended", () => {
-      console.log("Song ended, cycling queue...")
-      karaokeRoom.stopVideo()
-      karaokeRoom.cycleSong()
+      // Only Take action if received from current singer
+      if (
+        karaokeRoom.nowPlaying &&
+        karaokeRoom.nowPlaying.singerId === socket.id
+      ) {
+        console.log("Song ended, cycling queue...")
+        karaokeRoom.stopVideo()
+        karaokeRoom.cycleSongs()
+      }
     })
 
     socket.on("add-song", (data) => {
       karaokeRoom.addToSongQueue(data, socket.id)
+    })
+
+    socket.on("disconnect", () => {
+      karaokeRoom.removeUser(socket)
     })
   },
 }
