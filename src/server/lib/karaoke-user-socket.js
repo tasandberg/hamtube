@@ -30,7 +30,7 @@ module.exports = {
         karaokeRoom.nowPlaying &&
         karaokeRoom.nowPlaying.singerId === socket.id
       ) {
-        console.log("Song ended, cycling queue...")
+        debug("Song ended, cycling queue...")
         karaokeRoom.stopVideo()
         karaokeRoom.cycleSongs()
       }
