@@ -1,9 +1,13 @@
 import React from "react"
 import ReactDOM from "react-dom"
-import "./styles/main.scss"
+import "./client/styles/main.scss"
 
-import App from "./App"
+import App from "./client/App"
 import * as serviceWorker from "./serviceWorker"
+
+if (process.env.NODE_ENV !== "production") {
+  localStorage.setItem("debug", "Hamtube:*")
+}
 
 ReactDOM.render(
   <React.StrictMode>

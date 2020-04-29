@@ -36,9 +36,9 @@
     "youtube-dl": "^3.0.2"
   },
   "scripts": {
-    "client-dev": "react-scripts start",
-    "server-dev": "nodemon server.js",
-    "start": "node server.js",
+    "client-dev": "DEBUG=VideoPlayer react-scripts start",
+    "server-dev": "nodemon src/server/server.js",
+    "start": "node server/server.js",
     "dev": "./bin/startup.sh",
     "heroku-postbuild": "yarn build",
     "build": "react-scripts build",

@@ -3,26 +3,35 @@ import YouTube from "react-youtube"
 import { extractVideoId } from "../util/youtube-data"
 import classNames from "classnames"
 import _ from "lodash"
+const debug = require("debug")("Hamtube:VideoPlayer")
 
 class VideoPlayer extends React.Component {
   constructor(props) {
     super(props)
 
     this.state = {
-      isPlaying: false,
+      hideOverlay: false,
       progress: 0,
     }
   }
 
   componentDidUpdate(prevProps, prevState, snapshot) {
     const currentVideoState = this.props.videoState
-
+    if (!this.player) return
     if (currentVideoState !== prevProps.videoState) {
+      debug("state change", currentVideoState)
+      debug(YouTube.PlayerState.ENDED, "ENDED")
+
       switch (currentVideoState) {
         case YouTube.PlayerState.ENDED:
-          this.player.stopVideo()
+          debug("video player ended")
+          this.hideOverlay(false)
+          this.player.pauseVideo()
           break
         case YouTube.PlayerState.PLAYING:
+          debug("video player playing")
+          this.updateProgress()
+          this.hideOverlay(true)
           this.player.seekTo(this.props.videoPosition)
           this.player.playVideo()
           break
@@ -33,46 +42,57 @@ class VideoPlayer extends React.Component {
     }
 
     if (!_.isEqual(prevProps.videoData, this.props.videoData)) {
-      console.log("New video: %s", prevProps.videoData)
+      debug(prevProps.videoData, "prev")
+      debug(this.props.videoData, "new")
     }
   }
 
-  setPlaying() {
+  hideOverlay(hide) {
     setTimeout(() => {
-      this.setState({ isPlaying: true })
+      this.setState({ hideOverlay: hide })
     }, 2000)
   }
 
   updateProgress() {
+    if (this.props.videoState !== YouTube.PlayerState.PLAYING) return
+
     const currentTime = this.player.getCurrentTime()
     const duration = this.player.getDuration()
+
     if (this.props.isLocalUser) {
       this.props.setCurrentTime(currentTime)
     } else {
-      const positionOffset = Math.abs(currentTime - this.props.videoPosition)
-      if (positionOffset > 0.5) {
-        console.log("Video more that .5s out of sync. Syncing video...")
+      // add time since
+      const { position, timeRecorded } = this.props.videoPosition
 
-        this.player.seekTo(this.props.videoPosition)
+      // Get millis elapsed to receive position message
+      const millisSincePosition = (Date.now() - timeRecorded) / 1000
+
+      // Add millis to reported position
+      const adjustedPosition = position + millisSincePosition
+
+      // Calculate how off we are from reported position + millis elapsed
+      const positionOffset = Math.abs(currentTime - position)
+
+      // If greater than 500ms, sync to position + milliseconds since reporting
+      if (positionOffset > 0.5) {
+        debug("Video more that .5s out of sync. Syncing video...")
+
+        this.player.seekTo(adjustedPosition)
       }
     }
+
     this.setState({
       progress: (currentTime / duration) * 100,
     })
+
     setTimeout(() => {
       this.updateProgress()
     }, 200)
   }
 
-  stateChange = (e) => {
-    const { data } = e
-
-    this.updateProgress()
-    if (data === YouTube.PlayerState.PLAYING) this.setPlaying()
-  }
-
   onReady = (e) => {
-    console.log("video player ready")
+    debug("video player ready")
     this.player = e.target
     this.props.broadcastReady()
   }
@@ -82,7 +102,7 @@ class VideoPlayer extends React.Component {
       <Fragment>
         <div
           className={classNames("video-overlay", {
-            fade: this.state.isPlaying,
+            fade: this.state.hideOverlay,
           })}
         >
           <div className="loading-text has-text-white">
@@ -94,7 +114,6 @@ class VideoPlayer extends React.Component {
         </div>
         <YouTube
           videoId={extractVideoId(videoData.url)}
-          ref={(youtube) => (this.youtube = youtube)}
           containerClassName="video-player"
           onStateChange={this.stateChange}
           onEnd={() => isLocalUser && this.props.onEnd()}
@@ -121,11 +140,7 @@ class VideoPlayer extends React.Component {
     const { videoData, isLocalUser } = this.props
     return (
       <div className="video-container">
-        {videoData ? (
-          this.renderVideoPlayer(videoData, isLocalUser)
-        ) : (
-          <span>TODO: Empty video state</span>
-        )}
+        {videoData ? this.renderVideoPlayer(videoData, isLocalUser) : null}
       </div>
     )
   }

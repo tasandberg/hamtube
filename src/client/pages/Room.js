@@ -5,6 +5,7 @@ import SongList from "../components/SongInput"
 import NotificationBar from "../components/NotificationBar"
 import VideoPlayer from "../components/VideoPlayer"
 import attachClientSocket from "../util/attachClientSocket"
+const debug = require("debug")("Hamtube:Room")
 
 const vidOptions = {
   video: {
@@ -39,7 +40,7 @@ export default class Room extends React.Component {
   }
 
   componentDidMount() {
-    console.log("Initializing client")
+    debug("Initializing client")
     attachClientSocket(this)
 
     this.startLocalVideo()
@@ -86,11 +87,11 @@ export default class Room extends React.Component {
   }
 
   startLocalVideo() {
-    console.log("Requesting local video")
+    debug("Requesting local video")
     navigator.mediaDevices
       .getUserMedia(vidOptions)
       .then((stream) => {
-        console.log("Local Video Obtained")
+        debug("Local Video Obtained")
         this.localVideo = stream
         this.setState((prevState) => ({
           videoStreams: {
@@ -102,7 +103,7 @@ export default class Room extends React.Component {
         // Clone stream for sending to peers
         this.peerStream = this.localVideo.clone()
       })
-      .catch((e) => console.log(e))
+      .catch((e) => debug(e))
   }
 
   setName = () => {
@@ -113,7 +114,7 @@ export default class Room extends React.Component {
   }
 
   shareStream = () => {
-    console.log("Sharing local video stream")
+    debug("Sharing local video stream")
 
     this.setState({
       videoEnabled: true,
@@ -121,13 +122,13 @@ export default class Room extends React.Component {
 
     Object.keys(this.state.peers).forEach((id) => {
       const { peer } = this.state.peers[id]
-      console.log(peer.streams)
+      debug(peer.streams)
       peer.addStream(this.peerStream)
     })
   }
 
   stopStream = () => {
-    console.log("Disconnecting local video from peers")
+    debug("Disconnecting local video from peers")
 
     this.setState({
       videoEnabled: false,
@@ -159,7 +160,7 @@ export default class Room extends React.Component {
   }
 
   setCurrentTime = (position) => {
-    this.socket.emit("video-position", position)
+    this.socket.emit("video-position", { position, timeRecorded: Date.now() })
   }
 
   addSong = (data) => {
@@ -195,12 +196,10 @@ export default class Room extends React.Component {
       >
         {/* These Children will render inside of the Youtube Box, upper left */}
         <VideoPlayer
-          broadcast={this.broadcastVideoData}
-          ref={(videoPlayer) => this.videoPlayer}
           videoState={videoState}
           isLocalUser={singer && singer.id === "local"}
           setCurrentTime={this.setCurrentTime}
-          videoData={currentSong["videoData"]}
+          videoData={currentSong && currentSong["videoData"]}
           videoPosition={videoPosition}
           onEnd={this.onEnd}
           broadcastReady={() => this.socket.emit("player-ready")}
