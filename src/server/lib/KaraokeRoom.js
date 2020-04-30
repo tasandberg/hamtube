@@ -1,5 +1,8 @@
 const getNumberWithOrdinal = require("../util/numberHelper")
 const PLAYER_STATES = require("./playerStates")
+const Room = require("../../../models/index").Room
+const moment = require("moment")
+
 const {
   initKaraokeUserSocket,
   teardownKaraokeUserSocket,
@@ -30,19 +33,31 @@ const debug = require("debug")("KaraokeRoom")
 class KaraokeRoom {
   constructor(props) {
     const requiredProps = ["id", "io"]
+    console.log("constructor called")
+
     requiredProps.forEach((prop) => {
       if (!props[prop]) {
         throw new Error(`KaraokeRoom requires ${prop}`)
       }
     })
-
     this.id = props.id
+    this.room = this.getDbRoom()
     this.io = props.io
     this.songQueue = []
     this.nowPlaying = null
     this.users = {}
     this.awaitingClients = []
     this.videoState = null
+  }
+
+  getDbRoom = async () => {
+    this.room = await Room.findByPk(this.id)
+    if (!this.room) {
+      debug("Room not found. TODO: DO SOMETHING! (catch this in the socket)")
+    } else {
+      this.room.abandonedAt = null
+      this.room.save()
+    }
   }
 
   addUser = (socket) => {
@@ -54,7 +69,10 @@ class KaraokeRoom {
     debug("Added user %s. %s total", socket.id, Object.keys(this.users).length)
   }
 
-  removeUser = (socket) => {
+  /**
+   * TODO: remove all songs from queue with singerId === socket.id
+   */
+  removeUser = async (socket) => {
     teardownKaraokeUserSocket(socket)
     this.updateAwaitingClients(socket)
 
@@ -64,6 +82,11 @@ class KaraokeRoom {
       this.cycleSongs()
     }
     delete this.users[socket.id]
+    if (Object.keys(this.users).length === 0) {
+      debug("No users left, recording time as abandonedAt on Room")
+      this.room.abandonedAt = moment().toISOString()
+      this.room.save()
+    }
   }
 
   // Adds song data and singerId to song queue
@@ -135,7 +158,7 @@ class KaraokeRoom {
   }
 
   updateAwaitingClients = (socket) => {
-    debug("AwaitingClients: Socket %s is ready, removing", socket.id)
+    debug("AwaitingClients: Removing user %s from awaiting clients", socket.id)
     this.removeUserFromAwaiting(socket)
     // If waiting list is now empty and a song is queued up,
     // set status to PLAYING and notify room
@@ -143,7 +166,9 @@ class KaraokeRoom {
       this.notifyRoom(`Now playing: ${this.nowPlaying.videoData.title}`)
       this.playVideo()
     } else {
-      debug("Still waiting on %s clients", this.awaitingClients.length)
+      if (this.nowPlaying) {
+        debug("Still waiting on %s clients", this.awaitingClients.length)
+      }
     }
   }
 

@@ -1,6 +1,6 @@
 const { KaraokeRoom } = require("../lib/KaraokeRoom")
 const _ = require("lodash")
-
+const debug = require("debug")("Socket")
 /**
  * Dictionary of songQueues by RoomID
  * Individual SongQueue Shape:
@@ -18,7 +18,7 @@ const initializeRoom = (roomId, io) => {
 
 module.exports = function (server) {
   const io = require("socket.io")(server)
-  io.sockets.on("error", (e) => console.log(e))
+  io.sockets.on("error", (e) => debug(e))
 
   const onConnection = (socket) => {
     const roomId = socket.handshake.query.room
@@ -26,18 +26,10 @@ module.exports = function (server) {
 
     room.addUser(socket)
 
-    console.log("Connection to room %s with ID: %s", roomId, socket.id)
-
-    /**
-     * Song Queue Functions
-     */
-    const broadcastRoomData = (socketId) => {
-      const emitter = socketId ? io.to(socketId) : io.to(roomId)
-      emitter.emit("room-data", room.roomData())
-    }
+    debug("Connection to room %s with ID: %s", roomId, socket.id)
 
     socket.on("disconnect", function () {
-      console.log("Disconnecting ", socket.id)
+      debug("Disconnecting ", socket.id)
       io.to(roomId).emit("destroy", socket.id)
     })
 
@@ -71,7 +63,7 @@ module.exports = function (server) {
     const connectedSockets = _.pick(io.sockets.connected, connectedSocketIds)
 
     _.forEach(connectedSockets, function (socket2) {
-      console.log("Advertising peer %s to %s", socket.id, socket2.id)
+      debug("Advertising peer %s to %s", socket.id, socket2.id)
       socket2.emit("peer", {
         peerId: socket.id,
         initiator: true,
