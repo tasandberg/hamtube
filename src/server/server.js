@@ -1,13 +1,14 @@
 const express = require("express")
 const subdomain = require("express-subdomain")
-require("dotenv").config()
 const app = express()
 // const bodyParser = require("body-parser")
 const path = require("path")
+require("dotenv").config()
 const port = process.env.PORT || 4000
 const apiRouter = require("../../routes/api")
 const fs = require("fs")
 const morgan = require("morgan")
+const debug = require("debug")("Express")
 
 // Logging
 app.use(morgan("tiny"))
@@ -23,7 +24,7 @@ app.use(function (req, res, next) {
 
 let server
 if (process.env.NODE_ENV === "development") {
-  console.log("Starting development server with self-signed SSL Certificate")
+  debug("Starting development server with self-signed SSL Certificate")
 
   server = require("https").createServer(
     {
@@ -33,7 +34,7 @@ if (process.env.NODE_ENV === "development") {
     app
   )
 } else {
-  console.log("Starting production server")
+  debug("Starting production server")
   server = require("http").createServer(app)
 }
 
@@ -53,5 +54,8 @@ app.get("*", function (req, res) {
 })
 
 server.listen(port, process.env.HOST, () =>
-  console.log(`Server is running on port ${port}`)
+  debug(`Server is running on port ${port}`)
 )
+
+debug("Kicking off recurring tasks")
+require("./util/rooms-cleanup-task")()

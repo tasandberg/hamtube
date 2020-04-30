@@ -51,15 +51,13 @@ class KaraokeRoom {
   }
 
   getDbRoom = async () => {
-    const room = await Room.findByPk(this.id).done()
-    if (!room) {
-      debug("Room not found")
+    this.room = await Room.findByPk(this.id)
+    if (!this.room) {
+      debug("Room not found. TODO: DO SOMETHING! (catch this in the socket)")
     } else {
-      room.abandonedAt = null
-      await room.save()
+      this.room.abandonedAt = null
+      this.room.save()
     }
-
-    return room
   }
 
   addUser = (socket) => {
@@ -84,12 +82,10 @@ class KaraokeRoom {
       this.cycleSongs()
     }
     delete this.users[socket.id]
-    debug(this.users, "users")
     if (Object.keys(this.users).length === 0) {
       debug("No users left, recording time as abandonedAt on Room")
-      this.room.abandonedAt = moment()
-      debug(this.room)
-      // await this.room.reload().save()
+      this.room.abandonedAt = moment().toISOString()
+      this.room.save()
     }
   }
 
