@@ -9,6 +9,12 @@ const apiRouter = require("../../routes/api")
 const fs = require("fs")
 const morgan = require("morgan")
 const debug = require("debug")("Express")
+const Sentry = require("@sentry/node")
+Sentry.init({
+  dsn:
+    "https://a0ace01a5f18489cb3b7b7dba1a6b992@o386413.ingest.sentry.io/5220707",
+})
+app.use(Sentry.Handlers.requestHandler())
 
 // Logging
 app.use(morgan("tiny"))
@@ -52,6 +58,8 @@ app.get("*", function (req, res) {
   }
   res.sendFile(indexPath)
 })
+
+app.use(Sentry.Handlers.errorHandler())
 
 server.listen(port, process.env.HOST, () =>
   debug(`Server is running on port ${port}`)
