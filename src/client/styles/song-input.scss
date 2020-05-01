@@ -61,11 +61,12 @@
     display: flex;
     padding: 0 1rem 0 1rem;
     align-items: center;
-    width: 140px;
+    width: 155px;
     transition: 200ms ease-in;
 
     i {
       max-width: 20px;
+      margin-left: 10px;
     }
     input.input {
       border: none;
