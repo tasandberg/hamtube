@@ -12,7 +12,10 @@ function getAbandonedRooms() {
       [lte]: cutOff,
     },
   }
-  return Room.findAll({ where })
+  return Room.findAll({ where }).catch((e) => {
+    debug(e)
+    return []
+  })
 }
 
 const roomCleanup = async () => {
